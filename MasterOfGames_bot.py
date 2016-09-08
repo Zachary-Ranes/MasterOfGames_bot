@@ -1,14 +1,18 @@
 #Written by Zachary Ranes
 #Written for Python 3.4
 
+import configparser
 import telebot
 import random 
 import math
 
-bot = telebot.TeleBot("294917770:AAHY8k4oLdBN-3haU29_Tywp0xXbScWGjps")
+config = configparser.ConfigParser()
+config.read("MasterOfGames_bot_config.cfg")
+
+bot = telebot.TeleBot(config.get("telegram_bot_api","telegram_token"))
+
 bot.game_state = 0
 bot.players = []
-
 
 
 @bot.message_handler(commands=['new_game'])
@@ -16,6 +20,7 @@ def new_game_resistance(message):
 	bot.reply_to(message, "To play resistance we need 5 to 10 people \nIf you want to play type /join \nOnce everyone that wants to play has joined have someone run the /start_game")
 	bot.game_state = 1
 
+	
 @bot.message_handler(commands=['join'])
 def join_game_resistance(message):
 	if len(bot.players) == 10:
@@ -30,6 +35,7 @@ def join_game_resistance(message):
 	else:
 		bot.reply_to(message, "There is no game to join")
 
+		
 @bot.message_handler(commands=['start_game'])
 def start_game_resistance(message):
 	if bot.game_state == 1 and len(bot.players) < 5:
@@ -40,11 +46,11 @@ def start_game_resistance(message):
 		assign_roles()
 		
 		
-def assign_roles()
+def assign_roles():
 		random.shuffle(bot.players)
 		number_of_players = len(bot.players)
 		number_of_spys = int(math.ciel(number_of_players/3))
-
+		
 		
 		
 		
