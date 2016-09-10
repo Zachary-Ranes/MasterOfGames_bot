@@ -22,7 +22,7 @@ class Resistance:
 		self.number_of_spys = None
 		self.game_info = None		
 		
-	def StartUp():
+	def SetUp():
 		self.number_of_players = len(self.players)
 		self.number_of_spys = int(math.ceil(number_of_players/3))
 		random.shuffle(self.players)
