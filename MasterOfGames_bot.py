@@ -132,13 +132,23 @@ def StartGame(message):
 		
 		if len(games[key].players) >= games[key].MINPLAYERS:
 			bot.reply_to(message, "Let the game begin")
-			state[message.chat.id]  = 3
+			GameHandler(key)
+			state[key] = 3
 			return
 		
 	else:
 		bot.reply_to(message, "There's a time and place for everything, but not now")
 		
-	
+
+
+def GameHandler(key)
+	games[key].SetUp()
+	game = games[key]
+	for i in range(len(game.players)):
+		player_id = game.players[i]
+		bot.send_message(player_id, game.rolls[player_id].roll_info)
+	bot.send_message(key, game.game_info)
+
 
 		
 bot.polling()

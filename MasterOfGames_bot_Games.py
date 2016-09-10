@@ -4,6 +4,12 @@
 import math
 from random import shuffle
 
+class ResistanceRoll
+
+	def __init__(self):
+		self.spy = False
+		self.roll_info = None
+
 class Resistance:
 	
 	MINPLAYERS = 5
@@ -11,7 +17,11 @@ class Resistance:
 	
 	def __init__(self):
 		self.players = []
-	
+		self.rolls = {}
+		self.game_info = None		
+
+	def StartUp():
+		
 
 
 
