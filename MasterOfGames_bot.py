@@ -61,6 +61,7 @@ def NewGame(message):
 
 @bot.message_handler(func=lambda message: "Resistance" in message.text and state[message.chat.id] == 1)
 def StartResistance(message):
+	state[message.chat.id]  = 2
 	hide_options = types.ReplyKeyboardHide(selective=False)
 	bot.reply_to(message, "You have selected the game resistance\nTo play resistance we need 5 to 10 people \nIf you want to play start a private chat with me and type EXACTLY: /join "+str(message.chat.id)+"\nOnce everyone is ready have someone type /start_game", reply_markup=hide_options)
 
@@ -68,8 +69,6 @@ def StartResistance(message):
 	new_game.game_room = message.chat.title
 	games [message.chat.id] = new_game
 	
-	state[message.chat.id]  = 2
-
 	
 	
 @bot.message_handler(commands=['join'])
@@ -112,7 +111,7 @@ def JoinGame(message):
 		
 
 @bot.message_handler(commands=['start_game'])
-def StartGameResistance(message):
+def StartGame(message):
 	if message.chat.type != "group":
 		bot.reply_to(message, "You must be in a group chat to start a game")
 		return
