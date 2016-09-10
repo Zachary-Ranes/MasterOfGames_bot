@@ -141,12 +141,12 @@ def StartGame(message):
 		
 
 
-def GameHandler(key)
+def GameHandler(key):
 	games[key].SetUp()
 	game = games[key]
-	for i in range(len(game.players)):
+	for i in range(game.number_of_players):
 		player_id = game.players[i]
-		bot.send_message(player_id, game.rolls[player_id].roll_info)
+		bot.send_message(player_id, game.player_rolls[player_id].roll_info)
 	bot.send_message(key, game.game_info)
 
 
