@@ -3,138 +3,144 @@
 
 import configparser
 import telebot
-import math
-import random
+from telebot import types
+from MasterOfGames_bot_Games import Resistance
+
 
 config = configparser.ConfigParser()
 config.read("MasterOfGames_bot_config.cfg")
 
 bot = telebot.TeleBot(config.get("telegram_bot_api","telegram_token"))
 
-bot.game_state = 0
-bot.players = []
-bot.spys= []
-bot.game_room = None
-bot.number_of_players = None
-bot.number_of_spys = None
-bot.round_number = None
-bot.points_resistance = 0
-bot.points_spys = 0
+
+games = {}
+state = {}
+#state 0 = no game being run
+#state 1 = game selection
+#state 2 = players are joining game
+#state 3 = game running
 
 
 
 @bot.message_handler(commands=['start'])
-def NewPlayer(message):
-	if message.chat.type == "group":
-		bot.reply_to(message, "Hi I am a bot that lets you play games in a chat group \nRun the /new_game command to begin a new game")
-	
+def PlayerGreatting(message):
 	if message.chat.type == "private":
-		bot.reply_to(message, "Hi, bots are not alowed to message poeple that have not messaged them first ,that is why you have to start the chat with me to play the game\nDo not forget to run the /join command")
-
+		bot.reply_to(message, "Hi, bots are not alowed to message poeple that have not messaged them first ,that is why you have to start the chat with me to play the game\n To join type EXACTLY: /join #\n # = the number you got in the group chat")
+		return
+	
+	if message.chat.type == "group" and message.chat.id not in state:
+		state[message.chat.id] = 0
+		return
+		
+	else:
+		bot.reply_to(message, "There's a time and place for everything, but not now")
 		
 
+		
 @bot.message_handler(commands=['new_game'])
 def NewGame(message):
 	if message.chat.type == "private":
 		bot.reply_to(message, "You can't make a new game in a private chat")
 		return
 		
-	if message.chat.type != "private" and bot.game_state > 0:
-		bot.reply_to(message, "There is a game already made")
-		return
-	
-	if message.chat.type != "private" and bot.game_state ==0:
-		bot.reply_to(message, "To play resistance we need 5 to 10 people \nIf you want to play type /join in a private chat with me\nOnce everyone is ready have someone run the /start_game")
-		bot.game_room = message.chat.id 
-		bot.game_state = 1
+	if message.chat.type == "group" and message.chat.id not in state:
+		state[message.chat.id] = 0
 		
-		
-	
-	
-@bot.message_handler(commands=['join'])
-def JoinGameResistance(message):
-	if message.chat.type != "private":
-		bot.reply_to(message, "Sorry you must run the join command in a private chat with me")
-		return
-	
-	if len(bot.players) == 10:
-		bot.reply_to(message, "The game already has the max number of players")
-		return
-	
-	if bot.game_state > 1:
-		bot.reply_to(message, "The game has already started")
-		return
-		
-	if bot.game_state <= 0:
-		bot.reply_to(message, "There is no game to join")
-		return
-		
-	if bot.game_state == 1 and message.from_user.id in bot.players:
-		bot.reply_to(message, "You have already joined the game")		
-		return
-		
-	if bot.game_state == 1 and message.from_user.id not in bot.players:
-		bot.reply_to(message, "You have joined the game")
-		bot.send_message(bot.game_room, message.from_user.first_name +" has joined the game")
-		bot.players.append(message.from_user.id)
-
-		
-		
-@bot.message_handler(commands=['start_game'])
-def StartGameResistance(message):
-	if bot.game_state <= 0:
-		bot.reply_to(message, "There is no game to start")
-		return
-	
-	if bot.game_state > 1 and message.chat.id == bot.game_room:
-		bot.reply_to(message, "The game has already started")
-		return
-		
-	if bot.game_state == 1 and message.chat.id == bot.game_room and len(bot.players) < 5:
-		bot.reply_to(message, "Not enough players have joined to start the game \nYou need 5 to 10 people to play, "+str(len(bot.players))+" have joined")
-		return
-		
-	if bot.game_state == 1 and message.chat.id == bot.game_room and len(bot.players) >= 5 :
-		bot.reply_to(message, "Let the game begin")
-		bot.game_state = 2
-		AssignRoles()
+	if message.chat.type == "group" and state[message.chat.id] == 0:
+		game_options = types.ReplyKeyboardMarkup()
+		game_option1 = types.KeyboardButton('Resistance')
+		game_options.row(game_option1)
+		bot.reply_to(message, "Which game would you like to play?", reply_markup=game_options)
+		state[message.chat.id] = 1
 		return
 		
 	else:
 		bot.reply_to(message, "There's a time and place for everything, but not now")
-	
-
-		
-def AssignRoles():
-	bot.number_of_players = len(bot.players)
-	bot.number_of_spys = int(math.ceil(bot.number_of_players/3))
-	
-	random.shuffle(bot.players)
-	
-	bot.send_message(bot.game_room, "There are will be "+str(bot.number_of_spys)+" Spys in this game" )
-	
-	for i in range(bot.number_of_spys):
-		bot.send_message(bot.players[i], "You are a Spy")
-		bot.spys.append(bot.players[i])
-	
-	index_shift = bot.number_of_players - bot.number_of_spys - 1
-	for i in range(bot.number_of_players - bot.number_of_spys):
-		bot.send_message(bot.players[i + index_shift], "You are Resistance")
-"""	
-	#GameHandler()
 		
 		
 
-def GameHandler():
-	bot.round_number = 0
-	while bot.points_resistance < 3 and bot.points_spys <3:
-		RoundHandler(bot.round_number)
-		bot.round_number += 1
+@bot.message_handler(func=lambda message: "Resistance" in message.text and state[message.chat.id] == 1)
+def StartResistance(message):
+	hide_options = types.ReplyKeyboardHide(selective=False)
+	bot.reply_to(message, "You have selected the game resistance\nTo play resistance we need 5 to 10 people \nIf you want to play start a private chat with me and type EXACTLY: /join "+str(message.chat.id)+"\nOnce everyone is ready have someone type /start_game", reply_markup=hide_options)
+
+	new_game = Resistance()
+	new_game.game_room = message.chat.title
+	games [message.chat.id] = new_game
 	
-	if bot.points_resistance == 3
-	if bot.points_spys == 3
-"""
+	state[message.chat.id]  = 2
+
 	
 	
+@bot.message_handler(commands=['join'])
+def JoinGame(message):
+	if message.chat.type != "private":
+		bot.reply_to(message, "You must run the join command in a private chat with me ")
+		return
+
+	if message.chat.type == "private" and message.text.startswith("/join "):
+		try:
+			key = int(message.text[6:]) 
+			
+			if key not in state:
+				bot.reply_to(message, "Sorry there is no game in that chat right now")
+				return
+			
+			if state[key] != 2:
+				bot.reply_to(message, "Sorry that chat's game can not be joined")
+				return
+			
+			if state[key] == 2 and len(games[key].players) == games[key].MAXPLAYERS:
+				bot.reply_to(message,"The game in that chat already has the max number of players")
+				return
+			
+			if state[key] == 2 and message.from_user.id in games[key].players:
+				bot.reply_to(message,"You have already joined the game in that chat")
+				return
+			
+			if state[key] == 2:
+				games[key].players.append(message.from_user.id)
+				bot.reply_to(message, "you have joined the game")
+				bot.send_message(key, message.from_user.first_name +" has joined the game")
+		
+		except:
+			bot.reply_to(message, "Syntax Error!")
+	
+	else:
+		bot.reply_to(message, "There's a time and place for everything, but not now")
+
+		
+
+@bot.message_handler(commands=['start_game'])
+def StartGameResistance(message):
+	if message.chat.type != "group":
+		bot.reply_to(message, "You must be in a group chat to start a game")
+		return
+	
+	if message.chat.id not in state:
+		bot.reply_to(message, "Sorry there is no game in this chat right now")
+		return
+	
+	if state[message.chat.id] != 2:
+		bot.reply_to(message, "There's a time and place for everything, but not now")
+		return
+	
+	if state[message.chat.id] == 2 :
+		key = message.chat.id	
+		
+		if len(games[key].players) < games[key].MINPLAYERS:
+			bot.reply_to(message, "Not enough players have joined to start the game \nYou need "+str(games[key].MINPLAYERS)+" to "+str(games[key].MAXPLAYERS)+" people to play, "+str(len(games[key].players))+" have joined")
+			return
+		
+		if len(games[key].players) >= games[key].MINPLAYERS:
+			bot.reply_to(message, "Let the game begin")
+			state[message.chat.id]  = 3
+			return
+		
+	else:
+		bot.reply_to(message, "There's a time and place for everything, but not now")
+		
+	
+
 		
 bot.polling()
