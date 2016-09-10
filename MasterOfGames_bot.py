@@ -66,7 +66,6 @@ def StartResistance(message):
 		bot.reply_to(message, "You have selected the game resistance\nTo play resistance we need 5 to 10 people \nIf you want to play start a private chat with me and type EXACTLY: /join "+str(message.chat.id)+"\nOnce everyone is ready have someone type /start_game", reply_markup=hide_options)
 		state[message.chat.id] =2
 		new_game = Resistance()
-		new_game.game_room = message.chat.title
 		games [message.chat.id] = new_game
 	
 	
