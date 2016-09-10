@@ -62,13 +62,23 @@ def NewGame(message):
 @bot.message_handler(func=lambda message: "Resistance" in message.text and message.chat.id in state)
 def StartResistance(message):
 	if state[message.chat.id] == 1:
+		markup = types.InlineKeyboardMarkup()
+		markup.row(types.InlineKeyboardButton(callback_data="join", text="join"))
 		hide_options = types.ReplyKeyboardHide(selective=False)
-		bot.reply_to(message, "You have selected the game resistance\nTo play resistance we need 5 to 10 people \nIf you want to play start a private chat with me and type EXACTLY: /join "+str(message.chat.id)+"\nOnce everyone is ready have someone type /start_game", reply_markup=hide_options)
+		bot.reply_to(message, 
+									"""You have selected the game resistance\n
+									To play resistance we need 5 to 10 people\n
+									Once everyone is ready have someone type /start_game""",
+									reply_markup=markup)
 		state[message.chat.id] =2
 		new_game = Resistance()
 		games [message.chat.id] = new_game
 	
-	
+@bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "join")
+def player_joined_via_inline_keyboard(call):
+	key = call.message.chat.id
+	games[key].players.append(call.from_user.id)
+	bot.send_message(key, call.from_user.first_name +" has joined the game")
 
 @bot.message_handler(commands=['join'])
 def JoinGame(message):
