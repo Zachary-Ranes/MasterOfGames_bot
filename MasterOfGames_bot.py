@@ -5,7 +5,7 @@ import configparser
 import telebot
 from telebot import types
 from MasterOfGames_bot_Games import Resistance
-from MasterOfGames_bot_Games import ResistancePlayer
+from MasterOfGames_bot_Games import GamePlayer
 
 config = configparser.ConfigParser()
 config.read("MasterOfGames_bot_config.cfg")
@@ -18,16 +18,16 @@ games = {}
 @bot.message_handler(commands=['start'])
 def player_greatting(message):
 	if message.chat.type == "private":
-		bot.reply_to(message, "Hi, Placeholder")		
+		bot.reply_to(message, "Hi (Placeholder)")		
 		return
 	
 	if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
-		bot.reply_to(message, "Hi, Placeholder")
+		bot.reply_to(message, "Hi (Placeholder)")
 		return
 		
 	else:
 		bot.reply_to(message, "There's a time and place for everything, but not now")
-
+		
 		
 
 @bot.message_handler(commands=['new_game'])
@@ -38,14 +38,20 @@ def new_game(message):
 		
 	if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
 		markup = types.InlineKeyboardMarkup()
-		markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"))
+		markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"), types.InlineKeyboardButton(callback_data="placeholder", text="(Placeholder)"))
 		bot.send_message(message.chat.id, "Which game would you like to play?", reply_markup=markup)
 		return
 		
 	else:
 		bot.reply_to(message, "There's a time and place for everything, but not now")
 		
-	
+		
+		
+@bot.message_handler(commands=['rules_resistance'])
+def rules_for_resistance(message):
+	bot.reply_to(message, "Da Rules (Placeholder)")
+
+
 	
 @bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "resistance")
 def start_resistance(call):
@@ -62,13 +68,17 @@ def player_join_game(call):
 	key = call.message.chat.id
 	player_id = call.from_user.id
 	
+	if call.from_user.username == None:
+		bot.send_message(key, "I am sorry "+ call.from_user.first_name +" but you must have an @UserName to play")
+		return
+		
 	if player_id not in games[key].players_id: 
 		games[key].players_id.append(player_id)
-		games[key].players[player_id] = ResistancePlayer()
+		games[key].players[player_id] = GamePlayer()
 		games[key].players[player_id].player_username = call.from_user.username
 		bot.send_message(key, "@" +call.from_user.username +" has joined the game")
-
-	
+		
+		
 	
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "start")
 def start_game(call):
@@ -85,7 +95,7 @@ def start_game(call):
 				return
 				
 		if len(game.players_id) >= game.MINPLAYERS:
-			bot.send_message(key, "Let the game begin, Placeholder")
+			bot.send_message(key, "Let the game begin (Placeholder)")
 			game_handler_one(key)
 			return
 
@@ -93,23 +103,22 @@ def start_game(call):
 	
 def game_handler_one(key):
 	games[key].set_up()
-	game = games[key]
 	talk_to_everyone = True
 	
-	for i in range(game.number_of_players):
-		player_id = game.players_id[i]
+	for i in range(games[key].number_of_players):
+		player_id = games[key].players_id[i]
 		
 		try:
-			bot.send_message(player_id, game.players[player_id].roll_info)
+			bot.send_message(player_id, games[key].players[player_id].roll_info)
 
 		except:
-			bot.send_message(key, "I can not talk to @" + game.players[player_id].player_username+ "\nPlease start a private chat with me then hit start again")
+			bot.send_message(key, "I can not talk to @" + games[key].players[player_id].player_username+ "\nPlease start a private chat with me then hit start again")
 			talk_to_everyone = False
 			
 	if talk_to_everyone:		
-		bot.send_message(key, game.game_info)
-		game.game_started = True
-		games[key] = game
+		bot.send_message(key, games[key].game_info)
+		games[key].game_started = True
+
 			
 
 

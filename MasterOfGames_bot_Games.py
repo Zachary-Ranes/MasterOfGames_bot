@@ -4,7 +4,7 @@
 import math
 from random import shuffle
 
-class ResistancePlayer:
+class GamePlayer:
 
 	def __init__(self):
 		self.player_username = None
@@ -13,7 +13,7 @@ class ResistancePlayer:
 
 class Resistance:
 	
-	MINPLAYERS = 5
+	MINPLAYERS = 3 #should be 5 but is set to 3 for testing
 	MAXPLAYERS = 10
 	
 	def __init__(self):
@@ -26,6 +26,7 @@ class Resistance:
 		self.game_info = None		
 		self.points_spys = 0
 		self.points_resistance = 0
+		
 		
 	def set_up(self):
 		self.number_of_players = len(self.players_id)
@@ -47,7 +48,9 @@ class Resistance:
 			player.roll_info = "You are part of the Resistance"
 			self.players[player_id] = player
 		
-		self.game_info = "There are "+str(self.number_of_spys) +" spys in the group"
+		self.game_info = "There are "+str(self.number_of_spys) +" spys in the game (Placeholder)"
+		
+		
 
 
 
