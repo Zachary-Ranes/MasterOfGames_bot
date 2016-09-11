@@ -5,6 +5,7 @@ import configparser
 import telebot
 from telebot import types
 from MasterOfGames_bot_Games import Resistance
+from MasterOfGames_bot_Games import ResistancePlayer
 
 config = configparser.ConfigParser()
 config.read("MasterOfGames_bot_config.cfg")
@@ -20,7 +21,7 @@ def player_greatting(message):
 		bot.reply_to(message, "Hi, Placeholder")		
 		return
 	
-	if message.chat.type == "group" and message.chat.id not in games:
+	if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
 		bot.reply_to(message, "Hi, Placeholder")
 		return
 		
@@ -35,7 +36,7 @@ def new_game(message):
 		bot.reply_to(message, "You can't make a new game in a private chat")
 		return
 		
-	if message.chat.type == "group" and message.chat.id not in games:
+	if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
 		markup = types.InlineKeyboardMarkup()
 		markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"))
 		bot.send_message(message.chat.id, "Which game would you like to play?", reply_markup=markup)
@@ -61,9 +62,11 @@ def player_join_game(call):
 	key = call.message.chat.id
 	player_id = call.from_user.id
 	
-	if player_id not in games[key].players: 
-		games[key].players.append(player_id)
-		bot.send_message(key, call.from_user.first_name +" has joined the game")
+	if player_id not in games[key].players_id: 
+		games[key].players_id.append(player_id)
+		games[key].players[player_id] = ResistancePlayer()
+		games[key].players[player_id].player_username = call.from_user.username
+		bot.send_message(key, "@" +call.from_user.username +" has joined the game")
 
 	
 	
@@ -73,15 +76,15 @@ def start_game(call):
 	game = games[key]
 	
 	if game.game_started != True:
-		if len(game.players) < game.MINPLAYERS:
+		if len(game.players_id) < game.MINPLAYERS:
 			markup = types.InlineKeyboardMarkup()
 			markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), types.InlineKeyboardButton(callback_data="start", text="Start Game"))
 			try:
-				bot.edit_message_text("Not enough players have joined to start the game \nYou need "+str(game.MINPLAYERS)+" to "+str(game.MAXPLAYERS)+" people to play, "+str(len(game.players))+" player(s) has joined", message_id=call.message.message_id, chat_id=key, reply_markup=markup)
+				bot.edit_message_text("Not enough players have joined to start the game \nYou need "+str(game.MINPLAYERS)+" to "+str(game.MAXPLAYERS)+" people to play, "+str(len(game.players_id))+" players have joined", message_id=call.message.message_id, chat_id=key, reply_markup=markup)
 			except:
 				return
 				
-		if len(game.players) >= game.MINPLAYERS:
+		if len(game.players_id) >= game.MINPLAYERS:
 			bot.send_message(key, "Let the game begin, Placeholder")
 			game_handler_one(key)
 			return
@@ -89,27 +92,27 @@ def start_game(call):
 			
 	
 def game_handler_one(key):
+	games[key].set_up()
 	game = games[key]
-	game.set_up()
+	talk_to_everyone = True
+	
+	for i in range(game.number_of_players):
+		player_id = game.players_id[i]
+		
+		try:
+			bot.send_message(player_id, game.players[player_id].roll_info)
 
-	try:
-		for i in range(game.number_of_players):
-			player_id = game.players[i]
-			bot.send_message(player_id, game.player_rolls[player_id].roll_info)
-
+		except:
+			bot.send_message(key, "I can not talk to @" + game.players[player_id].player_username+ "\nPlease start a private chat with me then hit start again")
+			talk_to_everyone = False
+			
+	if talk_to_everyone:		
 		bot.send_message(key, game.game_info)
 		game.game_started = True
 		games[key] = game
-		
-	except:
-		bot.send_message(key, "I can not talk to everyone \nEveryone please makesure you have a private chat with me open")
+			
 
 
-		
-#def game_handler_two(key):
-
-
-		
 		
 		
 bot.polling()
