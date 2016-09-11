@@ -23,8 +23,7 @@ class Resistance:
 		self.number_of_spys = None
 		self.game_info = None		
 		
-	def SetUp(self):
-		self.game_started = True
+	def set_up(self):
 		self.number_of_players = len(self.players)
 		self.number_of_spys = int(math.ceil(self.number_of_players/3))
 		shuffle(self.players)
