@@ -18,20 +18,22 @@ class Resistance:
 	def __init__(self):
 		self.players = []
 		self.player_rolls = {}
+		self.game_started = False
 		self.number_of_players = None
 		self.number_of_spys = None
 		self.game_info = None		
 		
 	def SetUp(self):
+		self.game_started = True
 		self.number_of_players = len(self.players)
-		self.number_of_spys = int(math.ceil(number_of_players/3))
-		random.shuffle(self.players)
+		self.number_of_spys = int(math.ceil(self.number_of_players/3))
+		shuffle(self.players)
 		
 		for i in range(self.number_of_spys):
 			player_id = self.players[i]
 			player_roll = Roll()
 			player_roll.spy = True
-			player_roll.roll_info = "Your are a Spy"
+			player_roll.roll_info = "You are a Spy"
 			self.player_rolls[player_id] = player_roll
 		
 		index_shift = self.number_of_players - self.number_of_spys - 1
