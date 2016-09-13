@@ -53,7 +53,8 @@ class Resistance:
 		"""
 		
 		self.players_voted_on_mission = []
-		self.mission_votes = [0,0]
+		self.mission_yea_votes = 0
+		self.mission_nay_votes = 0
 		
 		self.points_spys = 0
 		self.points_resistance = 0
@@ -66,11 +67,19 @@ class Resistance:
 		
 		for i in range(self.number_of_spys):
 			player_id = self.players_id[i]
+			self.spys_id.append(player_id)
 			player = self.players[player_id]
 			player.spy = True
-			player.roll_info = "You are a Spy"
-			self.spys_id.append(player_id)
+			player.roll_info = "You are a Spy\nThe spys in this game are:\n"
 			self.players[player_id] = player
+		
+		#this whole chuck feels sloppy
+		list_of_spys_string = ""
+		for i in range(self.number_of_spys):
+			list_of_spys_string += "@" + self.players[self.spys_id[i]].player_username + " "
+		for i in range(self.number_of_spys):
+			self.players[self.spys_id[i]].roll_info += list_of_spys_string
+			
 		
 		index_shift = self.number_of_players - self.number_of_spys - 1
 		for i in range(self.number_of_players - self.number_of_spys):
@@ -113,25 +122,46 @@ class Resistance:
 			return "@"+ self.players[self.nominator_id].player_username +" gets to nominate "+ str(self.number_of_nominees) +" players to go on the mission\n"+extra_message+"Nominate players by typing /nominate @player_username"
 			
 
-
-	def nominate_logic(self, message):
+	def nominate_logic(self, entities, text):
 		mentioned = []
-		for i in range(len(message.entities)):
-			if message.entities[i].type == "mention":
-				starting_index = message.entities[i].offset +1
-				ending_index = message.entities[i].offset + message.entities[i].length
-				username_without_at = message.txt[starting_index:ending_index]
+		self.mission_players_id = []
+		for i in range(len(entities)):
+			if entities[i].type == "mention":
+				starting_index = entities[i].offset +1
+				ending_index = entities[i].offset + entities[i].length
+				username_without_at = text[starting_index:ending_index]
 				mentioned.append(username_without_at)
 		
 		if len(mentioned) != self.number_of_nominees:
-			return "You nominated the wrong number of players\n You need to nominate "+ str(self.number_of_nominees) + " players \nDo this by typing /nominate then the username of the players you want to nominate all in the same message"
+			return "You nominated the wrong number of players\nYou need to nominate "+ str(self.number_of_nominees) + " players \nDo this by typing /nominate then the username of the players you want to nominate all in the same message"
 				
 		for i in range(len(mentioned)):
 			if mentioned[i] not in self.player_usernames_to_id:
 				return "You nominated someone not playing"
 			else:
-				mission_players_id.append(player_usernames_to_id[mentioned[i]])
-				
+				self.mission_players_id.append(self.player_usernames_to_id[mentioned[i]])
+					
+		self.players_voted_on_mission = []
+		self.mission_yea_votes = 0
+		self.mission_nay_votes = 0
+		self.mission_state = 2
 		return "Okay now everyone vote /Yea or /Nay for the nominated party"
 		
-	#def vote_logic(self, entities):
+		
+	def vote_logic(self, voted_yea, player_id):
+		if player_id not in self.players_voted_on_mission:
+			if voted_yea:
+				self.mission_yea_votes += 1
+				self.player_voted_on_mission.append(player_id)
+				
+			else:
+				self.mission_nay_votes += 1
+				self.player_voted_on_mission.append(player_id)
+				
+		if self.mission_nay_votes >= self.number_of_players/2:
+			self.mission_state == 1
+			return
+			
+		if self.mission_yea_votes > self.number_of_players/2:
+			self.mission_state == 3
+	

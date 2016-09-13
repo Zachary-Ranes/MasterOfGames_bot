@@ -146,31 +146,29 @@ def game_round_handler(key):
 def nominate_players_for_mission(message):
 	key = message.chat.id
 	
-	#this if must have a better way but is need to prevent crashs
 	if key not in games:
-		bot.reply_to(message, "There's a time and place for everything, but not now")
+		bot.reply_to(message, "No game in this chat right now")
 		return
 	
 	if message.from_user.id == games[key].nominator_id and games[key].mission_state == 1:
-		output_message = games[key].nominate_logic(message)
+		output_message = games[key].nominate_logic(message.entities, message.text)
 		bot.reply_to(message, output_message)
-		
+		# write it so this can have an inline Yea or Nay buttons
 	
 
-"""
 @bot.message_handler(commands=['Yea'])	
 @bot.message_handler(commands=['Nay'])
 def mission_vote(message):
 	key = message.chat.id 
 	player_id = message.from_user.id
 	
-	#this if must have a better way but is need to prevent crashs
 	if key not in games:
-		bot.reply_to(message, "There's a time and place for everything, but not now")
+		bot.reply_to(message, "No game in this chat right now")
 		return
 		
 	if player_id in games[key].players_id and games[key].mission_state == 2:
-		games[key].vote_logic(message.entities)
+		if message.text[1:4] == 'Yea': games[key].vote_logic(True, player_id)
+		if message.text[1:4] == 'Nay': games[key].vote_logic(False, player_id)
 		
 		if games[key].mission_state == 1:
 			bot.send_message(key, "Vote failed, New player will get to nominate")
@@ -179,19 +177,19 @@ def mission_vote(message):
 		if games[key].mission_state == 3:
 			bot.send_message(key, "Vote passed, Now players will now go on a mission")
 			#have this so it say who is leaving for the mission??
-		#	game_mission_handler(key)
+			game_mission_handler(key)
 		
 	else:
 		bot.reply_to(message, "There's a time and place for everything, but not now")
 	
 	
-
+"""	
 def game_mission_handler(key)
-	?
 	
 	
-?
-?
+
+@bot.message_handler(commands=['Pass'])	
+@bot.message_handler(commands=['Fail'])
 def game_mission_outcome(message)
 	?
 """
