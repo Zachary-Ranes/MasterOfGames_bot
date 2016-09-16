@@ -193,7 +193,8 @@ def yea_nay_callback_handler(call):
                     markup = markup_resistance
                 
                 try:
-                    bot.send_message(player_id, games[key].mission_info(player_id)  , reply_markup=markup)
+                    output_message = games[key].mission_info(player_id)
+                    bot.send_message(player_id, output_message, reply_markup=markup)
                 except:
                     #I do not know what the bot should do if someone blocks it part of the way through the game........
                     bot.send_message(key, "ERROR!!!!")

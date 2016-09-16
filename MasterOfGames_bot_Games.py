@@ -182,8 +182,8 @@ class Resistance:
     #takes self, telegram user id and callback data (a string)
     #does calculation, retunres message if votes chnages state
     def vote_logic(self, player_id, vote):
-        output1 = None
-        output2 = None
+        output1 = ""
+        output2 = ""
         
         if vote == "yea":
             self.mission_yea_votes += 1
