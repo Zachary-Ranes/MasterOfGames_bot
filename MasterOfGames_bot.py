@@ -206,10 +206,10 @@ def yea_nay_callback_handler(call):
 def pass_fail_callback_handler(call):
     key = call.data[4:]
     player_id = call.from_user.id
-    
+
     if (games[key].game_state == 4
         and player_id in games[key].players_id_going_on_mission 
-        and player_id not in games[key].players_voted_on_mission):
+        and player_id not in games[key].players_id_votes_from_mission):
         
         output_message1, output_message2 = games[key].mission_logic(player_id, call.data[0:4])
 
