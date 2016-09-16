@@ -2,19 +2,12 @@
 #Written for Python 3.4
 
 import math
-import telebot
 from random import shuffle
-
-class GamePlayer:
-    def __init__(self):
-        self.player_username = None
-        self.spy = False
-        self.roll_info = None
-
+        
 class Resistance:
 
     def __init__(self):
-        self.MIN_PLAYERS = 3 #should be 5 but lower for testing
+        self.MIN_PLAYERS = 3
         self.MAX_PLAYERS = 10
 
         self.FIVE_PLAYERS = [2,3,2,3,3]
@@ -28,15 +21,6 @@ class Resistance:
                                                        self.EIGHT_PLUS_PLAYERS, 
                                                        self.EIGHT_PLUS_PLAYERS]
 
-        self.players_id = []
-        self.players = {}
-        self.player_usernames_to_id = {}
-
-        self.number_of_players = None
-        self.number_of_spys = None
-        self.spys_id = []	
-
-        self.round = 0
         self.game_state = 0
         """
         state 0 = game has not start (players can still join)
@@ -44,55 +28,100 @@ class Resistance:
         state 2 = looking for nominess for a mission
         state 3 = looking for votes on nominess for mission
         state 4 = votings over, players going on mission
-        state 5 =
-        state 6 = game has ending one team has scored 3 points
+        state 5 = game has ending one team has scored 3 points
+        state 6 = 
         """
+        self.round = 0
+                
+        self.players_id = []
+        self.number_of_players = 0
+        self.spys_id = []	
+        self.number_of_spys = 0
         
+        self.player_ids_to_username = {}
+        self.player_usernames_to_id = {}
+
         self.nominator_id = None
         self.last_nominator_index = -1
         
         self.number_of_nominees = None
-        self.two_fail_mission = None
-        self.players_going_on_mission = []
-
-        self.players_voted_on_mission = []
+        self.two_fail_mission = False
+        
+        self.players_id_going_on_mission = []
+        
+        self.players_id_voted_on_mission = []
         self.mission_yea_votes = 0
         self.mission_nay_votes = 0
-
+        
+        self.players_id_votes_from_mission = []
+        self.mission_fail_votes = 0
+        self.mission_pass_votes = 0
+        
         self.points_spys = 0
         self.points_resistance = 0
 
+        
+        
+    #takes a telegram users chat ID,  username and first name
+    #returns a message if succes or there can be no more players or returns None if a message should not be sent
+    def add_player(self, player_id, player_username, player_name):
+        if player_username == None:
+            return "I am sorry "+ player_name +" but you must have an @UserName to play"
+        
+        if len(self.players_id) == self.MAX_PLAYERS:
+            return "I am sorry @"+ player_username +" but we already have the max number of player for this game"
+       
+        if player_id not in self.players_id: 
+            self.players_id.append(player_id)
+            self.player_ids_to_username[player_id] = player_username
+            self.player_usernames_to_id[player_username] = player_id
+            return "@"+ player_username +" has joined the game"
+        
+        else:
+            return None
 
-    def game_setup(self):
+            
+    
+    #uses internal var 
+    #returns a messege of number of playres lacking or changes game_state to 1 and returns number of spicy in the game string
+    def setup_game(self):
         self.number_of_players = len(self.players_id)
+        
+        if self.number_of_players < self.MIN_PLAYERS:
+            return ("Not enough players have joined to start the game \nYou need "+str(self.MIN_PLAYERS)
+                      +" to "+str(self.MAX_PLAYERS)+" people to play, "+str(self.number_of_players) +" players have joined")
+        
         self.number_of_spys = int(math.ceil(self.number_of_players/3))
         #shuffling user IDs so the roles are not deturmind by what order poeple joined the game
         shuffle(self.players_id)
 
+        self.spys_id = []
         for i in range(self.number_of_spys):
-            player_id = self.players_id[i]
-            self.spys_id.append(player_id)
-            self.players[player_id].spy = True
-            self.players[player_id].roll_info = "You are a Spy\nThe spys in this game are:\n"
-
-        list_of_spys_string = ""
-        for i in range(self.number_of_spys):
-            list_of_spys_string += "@" + self.players[self.spys_id[i]].player_username + " "
-        for i in range(self.number_of_spys):
-            self.players[self.spys_id[i]].roll_info += list_of_spys_string
-
-
-        index_shift = self.number_of_players - self.number_of_spys - 1
-        for i in range(self.number_of_players - self.number_of_spys):
-            player_id = self.players_id[i + index_shift]
-            self.players[player_id].roll_info = "You are part of the Resistance"
+            self.spys_id.append(self.players_id[i])
 
         #shufled again so turn order does not give away roles
         shuffle(self.players_id)
+        self.game_state = 1
         return "The game of Resistance has started! \nThere are "+str(self.number_of_spys) +" spys in the game"
-
-
-    def round_setup(self):
+    
+    
+    
+    #take self and player chat id 
+    #returns what roll in the game the player is and if spy who the other spys are
+    def player_roll_info(self, player_id):
+        if player_id not in self.spys_id:
+            return "You are part of the Resistance"
+        else:
+            output = "You are a Spy\nThe other spy in this game are:\n"
+            for i in range(len(self.spys_id)):
+                if player_id != self.spys_id[i]:
+                    output += "@" + str(self.player_ids_to_username[self.spys_id[i]]) + "\n"
+            return output
+        
+        
+    #takes self
+    #return message who gets to nominate and if there are specail rules this round
+    def setup_round(self):
         if self.last_nominator_index == -1 or self.last_nominator_index + 1 == self.number_of_players:
             self.last_nominator_index == 0
             self.nominator_id = self.players_id[0]
@@ -109,25 +138,20 @@ class Resistance:
             self.two_fail_mission = False
             extra_message = ""
 
-        if self.points_spys == 3:
-            self.game_state = 6
-            return "The game is over the Spys wins!!!" 
-        if self.points_resistance == 3:
-            self.game_state = 6
-            return "The game is over the Resistance wins!!!"
-
-        if self.points_spys < 3 and self.points_resistance < 3:
-            self.number_of_nominees = self.PLAYERS_PER_ROUND[self.number_of_players-self.MIN_PLAYERS][self.round]
-            self.game_state = 2
-            return ("@"+ self.players[self.nominator_id].player_username 
-                       +" gets to nominate "+ str(self.number_of_nominees) 
-                       +" players to go on the mission\n"+ extra_message
-                       +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
+        self.number_of_nominees = self.PLAYERS_PER_ROUND[self.number_of_players-self.MIN_PLAYERS][self.round]
+        self.game_state = 2
+        return ("@"+ self.player_ids_to_username[self.nominator_id] 
+                   +" gets to nominate "+ str(self.number_of_nominees) 
+                   +" players to go on the mission\n"+ extra_message
+                   +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
 
 
+                       
+    #takes self an array of telegram chat entities and a chat messages text
+    #returns message about wether the message was a valid nomination
     def nominate_logic(self, entities, text):
         mentioned = []
-        self.players_going_on_mission = []
+        self.players_id_going_on_mission = []
         for i in range(len(entities)):
             if entities[i].type == "mention":
                 starting_index = entities[i].offset +1
@@ -142,10 +166,12 @@ class Resistance:
         for i in range(len(mentioned)):
             if mentioned[i] not in self.player_usernames_to_id:
                 return "You nominated someone not playing"
+            if self.player_usernames_to_id[mentioned[i]] in self.players_id_going_on_mission:
+                return "You nominated someone more than once"
             else:
-                self.players_going_on_mission.append(self.player_usernames_to_id[mentioned[i]])
+                self.players_id_going_on_mission.append(self.player_usernames_to_id[mentioned[i]])
 
-        self.players_voted_on_mission = []
+        self.players_id_voted_on_mission = []
         self.mission_yea_votes = 0
         self.mission_nay_votes = 0
         self.game_state = 3
@@ -153,6 +179,94 @@ class Resistance:
 
 
     
+    #takes self, telegram user id and callback data (a string)
+    #does calculation, retunres message if votes chnages state
+    def vote_logic(self, player_id, vote):
+        output1 = None
+        output2 = None
+        
+        if vote == "yea":
+            self.mission_yea_votes += 1
+        if vote == "nay":
+            self.mission_nay_votes += 1
+
+        output2 = "@"+ self.player_ids_to_username[player_id] +" has voted "+ vote
+        self.players_id_voted_on_mission.append(player_id)
+        
+        if self.mission_nay_votes >= self.number_of_players/2:
+            self.game_state = 2
+            output1 = "Enough Nays have been cast\nProposed mission will not happen"
+        
+        if self.mission_yea_votes > self.number_of_players/2:
+            self.game_state = 4
+            output1 = "Enough Yea have been cast\n"
+            for i in range(len(self.players_id_going_on_mission)):
+                output1 += "@" +  self.player_ids_to_username[self.players_id_going_on_mission[i]] + "\n"  
+            output1 += "Will now go on a mission"
+        
+        return output1, output2
+
+        
     
+    #takes self
+    #setup for var for a mission 
+    def setup_mission(self):
+        self.mission_pass_votes = 0
+        self.mission_fail_votes = 0
+        self.players_id_votes_from_mission = []
+    
+    
+    
+    #takes self and player chat id 
+    #returns message of who else is on the current mission with them
+    def mission_info(self, player_id):
+        output = "You are on a mission with"
+        for i in range(len(self.players_id_going_on_mission)):
+            if player_id != self.players_id_going_on_mission[i]:
+                output += " @" + self.player_ids_to_username[self.players_id_going_on_mission[i]] 
+        return output
+    
+    
+    
+    #takes self, players id and string that is there vote on wether the mission passes or not
+    #changes games state to 2 if the voting round is over or to state 5 if that was the last round
+    #retuns two outputs the first being a message if a mission failed or not and the secound being a message about the game ending
+    def mission_logic(self, player_id, vote):
+        if vote == "pass":
+            self.players_id_votes_from_mission.append(player_id)
+            self.mission_pass_votes += 1
+        
+        if vote == "fail" and player_id in self.spys_id:
+            self.players_id_votes_from_mission.append(player_id)
+            self.mission_fail_votes += 1
+
+        output1 = None
+        output2 = None
+        
+        if len(self.players_going_on_mission) == len(self.players_id_votes_from_mission):
+            if (self.mission_fail_votes >= 1 and self.two_fail_mission == False 
+             or self.mission_fail_votes >= 2 and self.two_fail_mission == True):
+                self.points_spys += 1
+                self.round += 1
+                self.game_state = 2 
+                output1 = ("Mission fails !!!!!\n" + self.mission_fail_votes + " fail vote(s) were handed in \n The score is now "
+                                + self.points_resistance +" for the Resistance and "+ self.points_spys +" for the Spys")
+                if self.points_spys == 3:
+                    self.game_state = 5
+                    output2 = "The Spys win the game"
+                         
+            else:
+                self.points_resistance += 1
+                self.round += 1
+                self.game_state = 2
+                output1 =  ("Mission passed!!!! \n" + self.mission_fail_votes + " fail vote(s) were handed in \n The score is now "
+                                + self.points_resistance +" for the Resistance and "+ self.points_spys +" for the Spys")
+                if self.points_resistance == 3:
+                    self.game_state = 5
+                    output2 = "The Resistance wins the game"
+         
+        return output1, output2
+    
+     
     
     
