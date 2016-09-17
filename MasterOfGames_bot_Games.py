@@ -108,8 +108,7 @@ class Resistance:
     
  
 
-    #
-    #
+    #pause games 
     def pause_game(self, value):
         if value == True:
             self.game_state_holder = self.game_state
@@ -138,10 +137,10 @@ class Resistance:
     def setup_round(self):
         if self.last_nominator_index + 1 == self.number_of_players:
             self.last_nominator_index == 0
-        else:
-            self.last_nominator_index += 1
             
         self.nominator_id = self.players_id[self.last_nominator_index]
+
+        self.last_nominator_index += 1
 
         #This if else is for the rule that some misions in the game will need two fail votes to fail
         if self.round == 3 and self.number_of_players >= 7:
@@ -195,8 +194,8 @@ class Resistance:
     #takes self, telegram user id and callback data (a string)
     #does calculation, retunres message if votes chnages state
     def vote_logic(self, player_id, vote):
-        output1 = ""
-        output2 = ""
+        output1 = "?"
+        output2 = "??"
         
         if vote == "yea":
             self.mission_yea_votes += 1
@@ -207,16 +206,16 @@ class Resistance:
         self.players_id_voted_on_mission.append(player_id)
         
         if self.mission_nay_votes >= self.number_of_players/2:
-            self.game_state = 2
             output1 = "Enough Nays have been cast\nProposed mission will not happen"
-        
+            self.game_state = 2
+
         if self.mission_yea_votes > self.number_of_players/2:
-            self.game_state = 4
             output1 = "Enough Yea have been cast\n"
             for i in range(len(self.players_id_going_on_mission)):
                 output1 += "@" +  self.player_ids_to_username[self.players_id_going_on_mission[i]] + "\n"  
-            output1 += "Will now go on a mission"
-        
+            output1 += "Will now go on a mission"        
+            self.game_state = 4
+
         return output1, output2
 
         
@@ -262,8 +261,9 @@ class Resistance:
                 self.points_spys += 1
                 self.round += 1
                 self.game_state = 2 
-                output1 = ("Mission fails !!!!!\n" + self.mission_fail_votes + " fail vote(s) were handed in \n The score is now "
-                                + self.points_resistance +" for the Resistance and "+ self.points_spys +" for the Spys")
+                output1 = ("Mission fails !!!!!\n" + str(self.mission_fail_votes) + " fail vote(s) were handed in \n The score is now "
+                                + str(self.points_resistance) +" for the Resistance and "+ str(self.points_spys) +" for the Spys")
+                
                 if self.points_spys == 3:
                     self.game_state = 5
                     output2 = "The Spys win the game"
@@ -272,8 +272,9 @@ class Resistance:
                 self.points_resistance += 1
                 self.round += 1
                 self.game_state = 2
-                output1 =  ("Mission passed!!!! \n" + self.mission_fail_votes + " fail vote(s) were handed in \n The score is now "
-                                + self.points_resistance +" for the Resistance and "+ self.points_spys +" for the Spys")
+                output1 =  ("Mission passed!!!! \n" + str(self.mission_fail_votes) + " fail vote(s) were handed in \n The score is now "
+                                + str(self.points_resistance) +" for the Resistance and "+ str(self.points_spys) +" for the Spys")
+                
                 if self.points_resistance == 3:
                     self.game_state = 5
                     output2 = "The Resistance wins the game"

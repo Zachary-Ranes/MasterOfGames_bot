@@ -238,21 +238,23 @@ def yea_nay_callback_handler(call):
                     
                     
 #flow is more or less the same as yea nay callback handler                     
-@bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and call.data[4:] in games or call.data[0:4] == "fail" and call.data[4:] in games)
+@bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and int(call.data[4:]) in games 
+                                      or call.data[0:4] == "fail" and int(call.data[4:]) in games)
 def pass_fail_callback_handler(call):
-    key = call.data[4:]
+    key = int(call.data[4:])
     player_id = call.from_user.id
-
+    
     if (games[key].game_state == 4
         and player_id in games[key].players_id_going_on_mission 
         and player_id not in games[key].players_id_votes_from_mission):
         
-        output_message1, output_message2 = games[key].mission_logic(player_id, call.data[0:4])
-
+        vote = call.data[0:4]       
+        output_message1, output_message2 = games[key].mission_logic(player_id, vote)
+        
 	#this output_message1 is saying the mission failed or not that is why it is not shown unless the voting is over
         if games[key].game_state != 4:
             bot.send_message(key, output_message1)
-            
+           
             if games[key].game_state == 2:
                 output_message = games[key].setup_round()
                 bot.send_message(key, output_message)
