@@ -42,7 +42,7 @@ class Resistance:
         self.player_usernames_to_id = {}
 
         self.nominator_id = None
-        self.last_nominator_index = -1
+        self.last_nominator_index = 0
         
         self.number_of_nominees = None
         self.two_fail_mission = False
@@ -122,13 +122,12 @@ class Resistance:
     #takes self
     #return message who gets to nominate and if there are specail rules this round
     def setup_round(self):
-        if self.last_nominator_index == -1 or self.last_nominator_index + 1 == self.number_of_players:
+        if self.last_nominator_index + 1 == self.number_of_players:
             self.last_nominator_index == 0
-            self.nominator_id = self.players_id[0]
-
         else:
             self.last_nominator_index += 1
-            self.nominator_id = self.player_id[self.last_nominator_index]
+            
+        self.nominator_id = self.players_id[self.last_nominator_index]
 
         #This if else is for the rule that some misions in the game will need two fail votes to fail
         if self.round == 3 and self.number_of_players >= 7:
