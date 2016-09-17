@@ -194,29 +194,20 @@ class Resistance:
     #takes self, telegram user id and callback data (a string)
     #does calculation, retunres message if votes chnages state
     def vote_logic(self, player_id, vote):
-        output1 = "?"
-        output2 = "??"
-        
         if vote == "yea":
             self.mission_yea_votes += 1
+            if self.mission_yea_votes > self.number_of_players/2:
+                self.game_state = 4
+
         if vote == "nay":
             self.mission_nay_votes += 1
+            if self.mission_nay_votes >= self.number_of_players/2:
+                self.game_state = 2
 
-        output2 = "@"+ self.player_ids_to_username[player_id] +" has voted "+ vote
+        output = "@"+ self.player_ids_to_username[player_id] +" has voted "+ vote
         self.players_id_voted_on_mission.append(player_id)
-        
-        if self.mission_nay_votes >= self.number_of_players/2:
-            output1 = "Enough Nays have been cast\nProposed mission will not happen"
-            self.game_state = 2
-
-        if self.mission_yea_votes > self.number_of_players/2:
-            output1 = "Enough Yea have been cast\n"
-            for i in range(len(self.players_id_going_on_mission)):
-                output1 += "@" +  self.player_ids_to_username[self.players_id_going_on_mission[i]] + "\n"  
-            output1 += "Will now go on a mission"        
-            self.game_state = 4
-
-        return output1, output2
+ 
+        return output
 
         
     
@@ -232,10 +223,14 @@ class Resistance:
     #takes self and player chat id 
     #returns message of who else is on the current mission with them
     def mission_info(self, player_id):
-        output = "You are on a mission with"
+        output = "You are on a mission with "
+        if player_id == None:
+            output = "Enough yeas have been cast, "
         for i in range(len(self.players_id_going_on_mission)):
             if player_id != self.players_id_going_on_mission[i]:
                 output += " @" + self.player_ids_to_username[self.players_id_going_on_mission[i]] 
+        if player_id == None:
+            output += " are now going to go on a mission"
         return output
     
     

@@ -199,18 +199,18 @@ def yea_nay_callback_handler(call):
     player_id = call.from_user.id
     
     if player_id in games[key].players_id and player_id not in games[key].players_id_voted_on_mission and games[key].game_state == 3:
-        output_message1, output_message2 = games[key].vote_logic(player_id, call.data)
-        
-        bot.send_message(key, output_message2)
+        output_message = games[key].vote_logic(player_id, call.data)
+        bot.send_message(key, output_message)
 
         if games[key].game_state == 2:
-            bot.send_message(key, output_message1)
+            bot.send_message(key, "Enough votes have been casted, mission will not be proformed")
             output_message = games[key].setup_round()
             bot.send_message(key, output_message)
             return
     
         if games[key].game_state == 4:
-            bot.send_message(key, output_message1)
+            output_message = games[key].mission_info(None)
+            bot.send_message(key, output_message)
             games[key].setup_mission()
             
             markup_resistance = types.InlineKeyboardMarkup()
