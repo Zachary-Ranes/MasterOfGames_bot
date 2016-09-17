@@ -133,7 +133,7 @@ def start_callback_handler(call):
 
 
 
-#
+#handles the nominate command for resistance, nominate_logic can't just be passed message becouse it losses text when passing or atleast apears to 
 @bot.message_handler(commands=['nominate'])
 def nominate_command_handler(message):
     key = message.chat.id
@@ -155,7 +155,9 @@ def nominate_command_handler(message):
 
             
             
-#       
+#takes the vote and passes it to vote_logic, vote logic may not change the game state if the vote does not make the over all voting fail or pass
+#if the vote dues make the over all vote pass or fail the game state will change too 2 if the vote fails and to 4 if it passes
+#if it goes to state 2 it will run the code to setup for a new nominator and if it goes to state 4 it will run code for the mission to start      
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "nay" 
                                                            or call.message.chat.id in games and call.data == "yea")
 def yea_nay_callback_handler(call):
@@ -201,7 +203,7 @@ def yea_nay_callback_handler(call):
 
                     
                     
-#                    
+#flow is more or less the same as yea nay callback handler                     
 @bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and call.data[4:] in games or call.data[0:4] == "fail" and call.data[4:] in games)
 def pass_fail_callback_handler(call):
     key = call.data[4:]
@@ -213,6 +215,7 @@ def pass_fail_callback_handler(call):
         
         output_message1, output_message2 = games[key].mission_logic(player_id, call.data[0:4])
 
+	#this output_message1 is saying the mission failed or not that is why it is not shown unless the voting is over
         if games[key].game_state != 4:
             bot.send_message(key, output_message1)
             

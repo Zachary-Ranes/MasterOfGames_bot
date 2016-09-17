@@ -242,7 +242,7 @@ class Resistance:
         output1 = None
         output2 = None
         
-        if len(self.players_going_on_mission) == len(self.players_id_votes_from_mission):
+        if len(self.players_id_going_on_mission) == len(self.players_id_votes_from_mission):
             if (self.mission_fail_votes >= 1 and self.two_fail_mission == False 
              or self.mission_fail_votes >= 2 and self.two_fail_mission == True):
                 self.points_spys += 1
