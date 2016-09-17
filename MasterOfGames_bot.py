@@ -29,17 +29,56 @@ def start_command_handler(message):
     else:
         bot.reply_to(message, "There's a time and place for everything, but not now")
 
-"""       
- #A command that is expacted in most bots will show a list of comands to get game rules
+
+       
+#A command that is expacted in most bots will show a list of comands to get game rules
 @bot.message_handler(commands=['help'])
 def help(message):
+    bot.reply_to(message, "************ HELP ************\n"
+                         +"Commands: \n/new_game\n/end_game"
+                         +"\nIf you need rules on any of the games you can play with me:\n"
+                         +"/rules_resistance")	
+
 
 
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_resistance'])
 def rules_for_resistance(message):
     bot.reply_to(message, "Da Rules (Placeholder)")
-"""
+
+
+
+#because sometimes game need to be stoped or reset before the game ends
+@bot.message_handler(commands=['end_game'])
+def end_game(message):
+    key = message.chat.id
+    if key in games:
+        games[key].pause_game(True)
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton(callback_data="end", text="End Game"),
+                     types.InlineKeyboardButton(callback_data="continue", text="Continue")) 
+        bot.reply_to(message, "Are you sure you want to end the game?!", reply_markup=markup) 
+
+    else:
+        bot.reply_to(message, "There's a time and place for everything, but not now")
+
+
+
+#handles the callback from the end_game command 
+@bot.callback_query_handler(func=lambda call: call.message.chat.id in games and call.data == "end" or call.message.chat.id in games and call.data == "continue")
+def end_continue_callback_handler(call):
+    key = call.message.chat.id
+    if games[key].game_state == 7:
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton(callback_data="-", text="..."))
+        if call.data == "continue":
+            games[key].pause_game(False)
+            bot.edit_message_text("The game will continue",message_id=call.message.message_id, chat_id=call.message.chat.id,reply_markup=markup)
+        if call.data == "end":
+            bot.edit_message_text("The game has been eneded!",message_id=call.message.message_id, chat_id=call.message.chat.id,reply_markup=markup)
+            del games[key]
+
+
 
 #Shows a message with an inline keyboard below it with game options
 @bot.message_handler(commands=['new_game'])
@@ -57,12 +96,7 @@ def new_game_command_handler(message):
     else:
         bot.reply_to(message, "There's a time and place for everything, but not now")
 
-"""
-#need to be able to end game part way by a majority vote 
-@bot.message_handler(commands=['end_game'])
-def end_game(message):
-  bot.reply_to(message,
-"""
+
 
 #handles the callback from the inline keybaord in the new_game function 
 @bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "resistance")
@@ -77,7 +111,7 @@ def resistance_callback_handler(call):
 
 
     
- #built so it should be able to handle the join callback from more then one game
+#built so it should be able to handle the join callback from more then one game
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "join")
 def join_callback_handler(call):
     key = call.message.chat.id

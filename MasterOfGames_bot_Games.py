@@ -22,6 +22,7 @@ class Resistance:
                                                        self.EIGHT_PLUS_PLAYERS]
 
         self.game_state = 0
+        self.game_state_holder = None
         """
         state 0 = game has not start (players can still join)
         state 1 = the game has started (players cant hit join)
@@ -30,6 +31,7 @@ class Resistance:
         state 4 = votings over, players going on mission
         state 5 = game has ending one team has scored 3 points
         state 6 = 
+        state 7 = game is paused (waiting for the game to be ended or continued)
         """
         self.round = 0
                 
@@ -104,8 +106,20 @@ class Resistance:
         self.game_state = 1
         return "The game of Resistance has started! \nThere are "+str(self.number_of_spys) +" spys in the game"
     
-    
-    
+ 
+
+    #
+    #
+    def pause_game(self, value):
+        if value == True:
+            self.game_state_holder = self.game_state
+            self.game_state = 7
+        if value == False:
+            self.game_state = self.game_state_holder
+            self.game_state_holder = None
+
+
+
     #take self and player chat id 
     #returns what roll in the game the player is and if spy who the other spys are
     def player_roll_info(self, player_id):
