@@ -7,7 +7,7 @@ from random import shuffle
 class Resistance:
 
     def __init__(self):
-        self.MIN_PLAYERS = 3
+        self.MIN_PLAYERS = 5
         self.MAX_PLAYERS = 10
 
         self.FIVE_PLAYERS = [2,3,2,3,3]
@@ -135,12 +135,13 @@ class Resistance:
     #takes self
     #return message who gets to nominate and if there are specail rules this round
     def setup_round(self):
-        if self.last_nominator_index + 1 == self.number_of_players:
-            self.last_nominator_index == 0
-            
-        self.nominator_id = self.players_id[self.last_nominator_index]
-
+        self.nominator_id = self.players_id[self.last_nominator_index]   
+         
         self.last_nominator_index += 1
+        
+        if self.last_nominator_index == self.number_of_players:
+            self.last_nominator_index == 0
+        
 
         #This if else is for the rule that some misions in the game will need two fail votes to fail
         if self.round == 3 and self.number_of_players >= 7:
