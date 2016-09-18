@@ -65,17 +65,16 @@ def end_game(message):
 
 
 #handles the callback from the end_game command 
-@bot.callback_query_handler(func=lambda call: call.message.chat.id in games and call.data == "end" or call.message.chat.id in games and call.data == "continue")
+@bot.callback_query_handler(func=lambda call: call.message.chat.id in games and call.data == "end" 
+                                                                   or call.message.chat.id in games and call.data == "continue")
 def end_continue_callback_handler(call):
     key = call.message.chat.id
     if games[key].game_state == 7:
-        markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton(callback_data="-", text="..."))
         if call.data == "continue":
             games[key].pause_game(False)
-            bot.edit_message_text("The game will continue",message_id=call.message.message_id, chat_id=call.message.chat.id,reply_markup=markup)
+            bot.edit_message_text("The game will continue",message_id=call.message.message_id, chat_id=call.message.chat.id)
         if call.data == "end":
-            bot.edit_message_text("The game has been eneded!",message_id=call.message.message_id, chat_id=call.message.chat.id,reply_markup=markup)
+            bot.edit_message_text("The game has been eneded!",message_id=call.message.message_id, chat_id=call.message.chat.id)
             del games[key]
 
 
@@ -239,7 +238,7 @@ def yea_nay_callback_handler(call):
                     
 #flow is more or less the same as yea nay callback handler                     
 @bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and int(call.data[4:]) in games 
-                                      or call.data[0:4] == "fail" and int(call.data[4:]) in games)
+                                                           or call.data[0:4] == "fail" and int(call.data[4:]) in games)
 def pass_fail_callback_handler(call):
     key = int(call.data[4:])
     player_id = call.from_user.id
