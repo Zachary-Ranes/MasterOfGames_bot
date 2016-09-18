@@ -257,7 +257,7 @@ class Resistance:
                 self.points_spys += 1
                 self.round += 1
                 self.game_state = 2 
-                output1 = ("Mission fails !!!!!\n" + str(self.mission_fail_votes) + " fail vote(s) were handed in \n The score is now "
+                output1 = ("Mission fails !!!!!\n" + str(self.mission_fail_votes) + " fail vote(s) were handed in \nThe score is now "
                                 + str(self.points_resistance) +" for the Resistance and "+ str(self.points_spys) +" for the Spys")
                 
                 if self.points_spys == 3:
@@ -268,7 +268,7 @@ class Resistance:
                 self.points_resistance += 1
                 self.round += 1
                 self.game_state = 2
-                output1 =  ("Mission passed!!!! \n" + str(self.mission_fail_votes) + " fail vote(s) were handed in \n The score is now "
+                output1 =  ("Mission passed!!!! \n" + str(self.mission_fail_votes) + " fail vote(s) were handed in \nThe score is now "
                                 + str(self.points_resistance) +" for the Resistance and "+ str(self.points_spys) +" for the Spys")
                 
                 if self.points_resistance == 3:
