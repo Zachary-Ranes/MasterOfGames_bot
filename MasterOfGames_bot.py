@@ -1,21 +1,23 @@
-#Written by Zachary Ranes
-#Written for Python 3.4
+#Author: Zachary Ranes
+#Written in Python 3.4, requires eternnoir/pyTelegramBotAPI to run
 
 import configparser
 import telebot
 from telebot import types
 from MasterOfGames_bot_Games import Resistance
 
+#This loads a config file that holds the bots API key
 config = configparser.ConfigParser()
 config.read("MasterOfGames_bot_config.cfg")
 
+#The bot object is the go between the telegram API and the python code
 bot = telebot.TeleBot(config.get("telegram_bot_api","telegram_token"))
 
-#This dictionary holds the game object that hold all the info about game state, the group chat that the bot is playng the game in is the key
+#This dictionary holds the game object that hold all the info about game state, the group chat that the bot is playing the game in is the key
 games = {}
 
 
-#responce to the command that is run when the bot is first talked to by user and first added to groupchats 
+#response to the command that is run when the bot is first talked to by user and first added to group-chats 
 @bot.message_handler(commands=['start'])
 def start_command_handler(message):
     if message.chat.type == "private":
@@ -23,7 +25,7 @@ def start_command_handler(message):
         return
 
     if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
-        bot.reply_to(message, "Hello!!! if you would like to play a game run /new_game")
+        bot.reply_to(message, "Hello!!! if you would like to play a game type /new_game")
         return
     
     else:
@@ -31,9 +33,9 @@ def start_command_handler(message):
 
 
        
-#A command that is expacted in most bots will show a list of comands to get game rules
+#A command that is expected in most bots will show a list of commands to get game rules
 @bot.message_handler(commands=['help'])
-def help(message):
+def help_command_handler(message):
     bot.reply_to(message, "************ HELP ************\n"
                          +"Commands: \n/new_game\n/end_game"
                          +"\nIf you need rules on any of the games you can play with me:\n"
@@ -43,14 +45,14 @@ def help(message):
 
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_resistance'])
-def rules_for_resistance(message):
+def rules_resistance_command_handler(message):
     bot.reply_to(message, "Da Rules (Placeholder)")
 
 
 
-#because sometimes game need to be stoped or reset before the game ends
+#because sometimes game need to be stopped or reset before the game ends
 @bot.message_handler(commands=['end_game'])
-def end_game(message):
+def end_game_command_handler(message):
     key = message.chat.id
     if key in games:
         games[key].pause_game(True)
@@ -66,7 +68,7 @@ def end_game(message):
 
 #handles the callback from the end_game command 
 @bot.callback_query_handler(func=lambda call: call.message.chat.id in games and call.data == "end" 
-                                                                   or call.message.chat.id in games and call.data == "continue")
+                                        or call.message.chat.id in games and call.data == "continue")
 def end_continue_callback_handler(call):
     key = call.message.chat.id
     if games[key].game_state == 7:
@@ -74,7 +76,7 @@ def end_continue_callback_handler(call):
             games[key].pause_game(False)
             bot.edit_message_text("The game will continue",message_id=call.message.message_id, chat_id=call.message.chat.id)
         if call.data == "end":
-            bot.edit_message_text("The game has been eneded!",message_id=call.message.message_id, chat_id=call.message.chat.id)
+            bot.edit_message_text("The game has been ended!",message_id=call.message.message_id, chat_id=call.message.chat.id)
             del games[key]
 
 
@@ -97,19 +99,19 @@ def new_game_command_handler(message):
 
 
 
-#handles the callback from the inline keybaord in the new_game function 
+#handles the callback from the inline keyboard in the new_game function 
 @bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "resistance")
 def resistance_callback_handler(call):
     markup = types.InlineKeyboardMarkup()
     markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
                       types.InlineKeyboardButton(callback_data="start", text="Start Game"))
     bot.edit_message_text("You have selected the game resistance\nTo play resistance we need 5 to 10 people", message_id=call.message.message_id, 
-                                                                                                                                                                                    chat_id=call.message.chat.id, 
-                                                                                                                                                                                    reply_markup=markup)
+                                                                                                                chat_id=call.message.chat.id, 
+                                                                                                                reply_markup=markup)
     games[call.message.chat.id] = Resistance()
 
 
-    
+
 #built so it should be able to handle the join callback from more then one game
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "join")
 def join_callback_handler(call):
@@ -117,7 +119,8 @@ def join_callback_handler(call):
     
     if games[key].game_state == 0:    
         output_message = games[key].add_player(call.from_user.id, call.from_user.username, call.from_user.first_name)
-    
+        
+        #add_player will return None if the player has already join the game 
         if output_message != None:
             bot.send_message(key, output_message)
         
@@ -153,7 +156,7 @@ def start_callback_handler(call):
                     bot.send_message(player_id, games[key].player_roll_info(player_id))
                 except:
                     bot.send_message(key, "I can not talk to @"+ games[key].player_ids_to_username[player_id]
-                                                     +"\nPlease start a private chat with me, we can not play the game if you do not do so")
+                                        +"\nPlease start a private chat with me, we can not play the game if you do not do so")
                     talk_to_everyone = False
                     games[key].game_state = 0
 
@@ -177,7 +180,7 @@ def nominate_command_handler(message):
 
     if message.from_user.id == games[key].nominator_id and games[key].game_state == 2:
         output_message = games[key].nominate_logic(message.entities, message.text)
-        #nominate_logic will change game_state to 3 if the monimates are valid
+        #nominate_logic will change game_state to 3 if the nominees are valid
         if games[key].game_state == 3:
             markup = types.InlineKeyboardMarkup()
             markup.row(types.InlineKeyboardButton(callback_data="yea", text="Yea"), 
@@ -188,11 +191,10 @@ def nominate_command_handler(message):
 
             
             
-#takes the vote and passes it to vote_logic, vote logic may not change the game state if the vote does not make the over all voting fail or pass
-#if the vote dues make the over all vote pass or fail the game state will change too 2 if the vote fails and to 4 if it passes
-#if it goes to state 2 it will run the code to setup for a new nominator and if it goes to state 4 it will run code for the mission to start      
+#takes the yea and nay callbacks
+#if game state changes it will run the code to setup for a new nominator or it will run code for the mission to start      
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "nay" 
-                                                           or call.message.chat.id in games and call.data == "yea")
+                                    or call.message.chat.id in games and call.data == "yea")
 def yea_nay_callback_handler(call):
     key = call.message.chat.id
     player_id = call.from_user.id
@@ -202,7 +204,7 @@ def yea_nay_callback_handler(call):
         bot.send_message(key, output_message)
 
         if games[key].game_state == 2:
-            bot.send_message(key, "Enough votes have been casted, mission will not be proformed")
+            bot.send_message(key, "Enough votes have been casted, mission will not be preformed")
             output_message = games[key].setup_round()
             bot.send_message(key, output_message)
             return
@@ -212,12 +214,12 @@ def yea_nay_callback_handler(call):
             bot.send_message(key, output_message)
             games[key].setup_mission()
             
+            #these two markups add the group chats Id (key) to there callback data so the callback can be associated to the group chat
             markup_resistance = types.InlineKeyboardMarkup()
             markup_resistance.row(types.InlineKeyboardButton(callback_data="pass"+str(key), text="Pass"))
-            
             markup_spys = types.InlineKeyboardMarkup()
             markup_spys.row(types.InlineKeyboardButton(callback_data="pass"+str(key), text="Pass"), 
-                                         types.InlineKeyboardButton(callback_data="fail"+str(key), text="Fail"))
+                            types.InlineKeyboardButton(callback_data="fail"+str(key), text="Fail"))
         
             for i in range(len(games[key].players_id_going_on_mission)):
                 player_id = games[key].players_id_going_on_mission[i]
@@ -232,33 +234,34 @@ def yea_nay_callback_handler(call):
                     bot.send_message(player_id, output_message, reply_markup=markup)
                 except:
                     #I do not know what the bot should do if someone blocks it part of the way through the game........
-                    bot.send_message(key, "ERROR!!!!")
-
+                    bot.send_message(key, "ERROR!!!!\nSome one blocked me since the start of the game, I am sorry the game can not continue")
+                    del games[key]
                     
                     
-#flow is more or less the same as yea nay callback handler                     
+#takes the pass fail callbacks from private chats
+#informs user of mission result and then starts new round or ends game                   
 @bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and int(call.data[4:]) in games 
-                                                           or call.data[0:4] == "fail" and int(call.data[4:]) in games)
+                                    or call.data[0:4] == "fail" and int(call.data[4:]) in games)
 def pass_fail_callback_handler(call):
     key = int(call.data[4:])
     player_id = call.from_user.id
     
-    if (games[key].game_state == 4
-        and player_id in games[key].players_id_going_on_mission 
-        and player_id not in games[key].players_id_votes_from_mission):
+    if (games[key].game_state == 4 and player_id in games[key].players_id_going_on_mission 
+                                and player_id not in games[key].players_id_votes_from_mission):
         
         vote = call.data[0:4]       
-        output_message1, output_message2 = games[key].mission_logic(player_id, vote)
+        output_message = games[key].mission_logic(player_id, vote)
         
-	#this output_message1 is saying the mission failed or not that is why it is not shown unless the voting is over
+        #this output_message is saying the mission failed or not that is why it is not shown unless the voting is over
         if games[key].game_state != 4:
-            bot.send_message(key, output_message1)
+            bot.send_message(key, output_message)
            
             if games[key].game_state == 2:
                 output_message = games[key].setup_round()
                 bot.send_message(key, output_message)
             
             if games[key].game_state == 5:
+                output_message = games[key].who_won()
                 bot.send_message(key, output_message2)
                 del games[key] 
 
