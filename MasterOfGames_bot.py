@@ -24,7 +24,8 @@ def start_command_handler(message):
         bot.reply_to(message, "Hello, I can now talk with you.\nIf you are not part of a game go to a group chat and run /start")		
         return
 
-    if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
+    if (message.chat.type == "group" and message.chat.id not in games 
+     or message.chat.type == "supergroup" and message.chat.id not in games):
         bot.reply_to(message, "Hello!!! if you would like to play a game type /new_game")
         return
     
@@ -54,11 +55,14 @@ def rules_resistance_command_handler(message):
 @bot.message_handler(commands=['end_game'])
 def end_game_command_handler(message):
     key = message.chat.id
+
     if key in games:
         games[key].pause_game(True)
+
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton(callback_data="end", text="End Game"),
-                     types.InlineKeyboardButton(callback_data="continue", text="Continue")) 
+                   types.InlineKeyboardButton(callback_data="continue", text="Continue")) 
+                            
         bot.reply_to(message, "Are you sure you want to end the game?!", reply_markup=markup) 
 
     else:
@@ -68,13 +72,15 @@ def end_game_command_handler(message):
 
 #handles the callback from the end_game command 
 @bot.callback_query_handler(func=lambda call: call.message.chat.id in games and call.data == "end" 
-                                        or call.message.chat.id in games and call.data == "continue")
+                                           or call.message.chat.id in games and call.data == "continue")
 def end_continue_callback_handler(call):
     key = call.message.chat.id
+
     if games[key].game_state == 7:
         if call.data == "continue":
             games[key].pause_game(False)
             bot.edit_message_text("The game will continue",message_id=call.message.message_id, chat_id=call.message.chat.id)
+        
         if call.data == "end":
             bot.edit_message_text("The game has been ended!",message_id=call.message.message_id, chat_id=call.message.chat.id)
             del games[key]
@@ -88,7 +94,8 @@ def new_game_command_handler(message):
         bot.reply_to(message, "You can't make a new game in a private chat")
         return
 
-    if message.chat.type == "group" and message.chat.id not in games or message.chat.type == "supergroup" and message.chat.id not in games:
+    if (message.chat.type == "group" and message.chat.id not in games 
+     or message.chat.type == "supergroup" and message.chat.id not in games):
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"))
         bot.send_message(message.chat.id, "Which game would you like to play?", reply_markup=markup)
@@ -102,12 +109,15 @@ def new_game_command_handler(message):
 #handles the callback from the inline keyboard in the new_game function 
 @bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "resistance")
 def resistance_callback_handler(call):
+
     markup = types.InlineKeyboardMarkup()
     markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
-                      types.InlineKeyboardButton(callback_data="start", text="Start Game"))
-    bot.edit_message_text("You have selected the game resistance\nTo play resistance we need 5 to 10 people", message_id=call.message.message_id, 
-                                                                                                                chat_id=call.message.chat.id, 
-                                                                                                                reply_markup=markup)
+               types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+
+    bot.edit_message_text("You have selected the game resistance\nTo play resistance we need 5 to 10 people", 
+                                                                            message_id=call.message.message_id, 
+                                                                            chat_id=call.message.chat.id, 
+                                                                            reply_markup=markup)
     games[call.message.chat.id] = Resistance()
 
 
@@ -123,8 +133,8 @@ def join_callback_handler(call):
         #add_player will return None if the player has already join the game 
         if output_message != None:
             bot.send_message(key, output_message)
-        
-        
+                
+
 
 #built so it should be able to handle the start callback from more then one game
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "start")
@@ -138,7 +148,7 @@ def start_callback_handler(call):
         if games[key].game_state == 0:
             markup = types.InlineKeyboardMarkup()
             markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
-                              types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+                       types.InlineKeyboardButton(callback_data="start", text="Start Game"))
            #this try is here because if the bot trys to edit the message and there is no change it will crash the bot
             try:
                 bot.edit_message_text(output_message, message_id=call.message.message_id, chat_id=key, reply_markup=markup) 
@@ -146,7 +156,7 @@ def start_callback_handler(call):
                 
             except:
                 return
-
+                
         if games[key].game_state == 1:
             talk_to_everyone = True
 
@@ -159,7 +169,7 @@ def start_callback_handler(call):
                                         +"\nPlease start a private chat with me, we can not play the game if you do not do so")
                     talk_to_everyone = False
                     games[key].game_state = 0
-
+                        
             #If the bot can not talk to everyone the game can not start        
             if talk_to_everyone:		
                 bot.send_message(key, output_message)
@@ -177,29 +187,32 @@ def nominate_command_handler(message):
     if key not in games:
         bot.reply_to(message, "No game in this chat right now")
         return
-
+            
     if message.from_user.id == games[key].nominator_id and games[key].game_state == 2:
         output_message = games[key].nominate_logic(message.entities, message.text)
         #nominate_logic will change game_state to 3 if the nominees are valid
         if games[key].game_state == 3:
             markup = types.InlineKeyboardMarkup()
             markup.row(types.InlineKeyboardButton(callback_data="yea", text="Yea"), 
-                              types.InlineKeyboardButton(callback_data="nay", text="Nay"))
+                       types.InlineKeyboardButton(callback_data="nay", text="Nay"))
             bot.reply_to(message, output_message, reply_markup=markup)
         else:
             bot.reply_to(message, output_message)
-
+            
             
             
 #takes the yea and nay callbacks
 #if game state changes it will run the code to setup for a new nominator or it will run code for the mission to start      
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "nay" 
-                                    or call.message.chat.id in games and call.data == "yea")
+                                      or call.message.chat.id in games and call.data == "yea")
 def yea_nay_callback_handler(call):
     key = call.message.chat.id
     player_id = call.from_user.id
     
-    if player_id in games[key].players_id and player_id not in games[key].players_id_voted_on_mission and games[key].game_state == 3:
+    if (games[key].game_state == 3
+    and player_id in games[key].players_id 
+    and player_id not in games[key].players_id_voted_on_mission):
+    
         output_message = games[key].vote_logic(player_id, call.data)
         bot.send_message(key, output_message)
 
@@ -208,7 +221,7 @@ def yea_nay_callback_handler(call):
             output_message = games[key].setup_round()
             bot.send_message(key, output_message)
             return
-    
+            
         if games[key].game_state == 4:
             output_message = games[key].mission_info(None)
             bot.send_message(key, output_message)
@@ -220,7 +233,7 @@ def yea_nay_callback_handler(call):
             markup_spys = types.InlineKeyboardMarkup()
             markup_spys.row(types.InlineKeyboardButton(callback_data="pass"+str(key), text="Pass"), 
                             types.InlineKeyboardButton(callback_data="fail"+str(key), text="Fail"))
-        
+                                
             for i in range(len(games[key].players_id_going_on_mission)):
                 player_id = games[key].players_id_going_on_mission[i]
                 
@@ -241,13 +254,14 @@ def yea_nay_callback_handler(call):
 #takes the pass fail callbacks from private chats
 #informs user of mission result and then starts new round or ends game                   
 @bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and int(call.data[4:]) in games 
-                                    or call.data[0:4] == "fail" and int(call.data[4:]) in games)
+                                      or call.data[0:4] == "fail" and int(call.data[4:]) in games)
 def pass_fail_callback_handler(call):
     key = int(call.data[4:])
     player_id = call.from_user.id
     
-    if (games[key].game_state == 4 and player_id in games[key].players_id_going_on_mission 
-                                and player_id not in games[key].players_id_votes_from_mission):
+    if (games[key].game_state == 4 
+    and player_id in games[key].players_id_going_on_mission 
+    and player_id not in games[key].players_id_votes_from_mission):
         
         vote = call.data[0:4]       
         output_message = games[key].mission_logic(player_id, vote)
@@ -259,10 +273,10 @@ def pass_fail_callback_handler(call):
             if games[key].game_state == 2:
                 output_message = games[key].setup_round()
                 bot.send_message(key, output_message)
-            
+                
             if games[key].game_state == 5:
                 output_message = games[key].who_won()
-                bot.send_message(key, output_message2)
+                bot.send_message(key, output_message)
                 del games[key] 
 
     

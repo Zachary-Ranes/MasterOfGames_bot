@@ -227,13 +227,17 @@ class Resistance:
     #returns message of who else is on the current mission with them
     def mission_info(self, player_id):
         output = "You are on a mission with "
+
         if player_id == None:
             output = "Enough yeas have been cast, "
+                
         for i in range(len(self.players_id_going_on_mission)):
             if player_id != self.players_id_going_on_mission[i]:
                 output += " @" + self.player_ids_to_username[self.players_id_going_on_mission[i]] 
+                    
         if player_id == None:
             output += " are now going to go on a mission"
+                
         return output
     
     
@@ -253,6 +257,7 @@ class Resistance:
         output = None
 
         if len(self.players_id_going_on_mission) == len(self.players_id_votes_from_mission):
+           
             if (self.mission_fail_votes >= 1 and self.two_fail_mission == False 
              or self.mission_fail_votes >= 2 and self.two_fail_mission == True):
                 self.points_spys += 1
@@ -263,8 +268,9 @@ class Resistance:
                 output =  ("Mission passed!!!! \n")
 
             self.round += 1
-            output += (str(self.mission_fail_votes) + " fail vote(s) were handed in \nThe score is now "
-                                + str(self.points_resistance) +" for the Resistance and "+ str(self.points_spys) +" for the Spies")
+            output += ("The score is now:\n "
+                        + str(self.points_resistance) +" for the Resistance \n"
+                        + str(self.points_spys) +" for the Spies")
             self.game_state = 2
             
             if self.points_spys == 3 or self.points_resistance == 3:
