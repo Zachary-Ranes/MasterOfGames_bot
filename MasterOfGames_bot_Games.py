@@ -307,13 +307,17 @@ class Mafia:
         state 6 = 
         state 7 = game is paused (waiting for the game to be ended or continued)
         """
-        self.round = 0
-                
-        self.players_id = []
-        self.number_of_players = 0
         
         self.player_ids_to_username = {}
         self.player_usernames_to_id = {}
+                
+        self.players_id = []
+        self.number_of_players = 0
+        self.mafia_ids = []
+        self.number_of_mafia = 0
+        
+        self.detective_id = None
+        self.doctor_id = None
         
         
     def add_player(self, player_id, player_username, player_name):
@@ -334,7 +338,23 @@ class Mafia:
             
             
     def setup_game(self):
-        return
+        self.number_of_players = len(self.players_id)
+        
+        if self.number_of_players < self.MIN_PLAYERS:
+            return ("Not enough players have joined to start the game \nYou need "+str(self.MIN_PLAYERS)
+                      +" or more to play, "+str(self.number_of_players) +" players have joined")
+        
+        shuffle(self.players_id)
+        self.number_of_mafia = int(math.floor(self.number_of_players/3))
+        for i in range(self.number_of_mafia):
+            self.mafia_ids.append(self.players_id[i])
+            
+        self.detective_id = self.players_id[self.number_of_mafia]
+        self.doctor_id = self.players_id[self.number_of_mafia + 1]
+        
+        self.game_state = 1
+        return "The game of Mafia has started! \nThere are"+ self.number_of_mafia + "mafia members in the group."
+        
         
     #pause games 
     def pause_game(self, value):

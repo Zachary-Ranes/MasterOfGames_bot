@@ -199,9 +199,17 @@ def start_callback_handler(call):
             #If the bot can not talk to everyone the game can not start        
             if talk_to_everyone:
                 bot.send_message(key, output_message)
+
+                play_round(key)
                 
-                output_message = games[key].setup_round()
-                bot.send_message(key, output_message)
+                
+#diffrent games have difrent round setup this can handle them all and is call more then once in every game type
+def play_round(key):
+    if games[key].game_code == 1:
+        output_message = games[key].setup_round()
+        bot.send_message(key, output_message)
+    if games[key].game_code == 2:      
+        bot.send_message(key,"Mafia")
 
 
 
@@ -245,8 +253,7 @@ def yea_nay_callback_handler(call):
 
         if games[key].game_state == 2:
             bot.send_message(key, "Enough votes have been casted, mission will not be preformed")
-            output_message = games[key].setup_round()
-            bot.send_message(key, output_message)
+            play_round(key)
             return
             
         if games[key].game_state == 4:
@@ -300,15 +307,13 @@ def pass_fail_callback_handler(call):
             bot.send_message(key, output_message)
            
             if games[key].game_state == 2:
-                output_message = games[key].setup_round()
-                bot.send_message(key, output_message)
+                play_round(key)
                 
             if games[key].game_state == 5:
                 output_message = games[key].who_won()
                 bot.send_message(key, output_message)
                 del games[key] 
 
-    
-    
+
     
 bot.polling()
