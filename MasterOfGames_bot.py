@@ -5,6 +5,7 @@ import configparser
 import telebot
 from telebot import types
 from MasterOfGames_bot_Games import Resistance
+from MasterOfGames_bot_Games import Mafia
 
 #This loads a config file that holds the bots API key
 config = configparser.ConfigParser()
@@ -40,13 +41,21 @@ def help_command_handler(message):
     bot.reply_to(message, "************ HELP ************\n"
                          +"Commands: \n/new_game\n/end_game"
                          +"\nIf you need rules on any of the games you can play with me:\n"
-                         +"/rules_resistance")	
+                         +"/rules_resistance"
+                         +"/rules_mafia")
 
 
 
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_resistance'])
 def rules_resistance_command_handler(message):
+    bot.reply_to(message, "Da Rules (Placeholder)")
+
+
+
+#output text with detailed rules on how to play resistance
+@bot.message_handler(commands=['rules_mafia'])
+def rules_mafia_command_handler(message):
     bot.reply_to(message, "Da Rules (Placeholder)")
 
 
@@ -97,7 +106,8 @@ def new_game_command_handler(message):
     if (message.chat.type == "group" and message.chat.id not in games 
      or message.chat.type == "supergroup" and message.chat.id not in games):
         markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"))
+        markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"),
+                   types.InlineKeyboardButton(callback_data="mafia", text="Mafia"))
         bot.send_message(message.chat.id, "Which game would you like to play?", reply_markup=markup)
         return
 
@@ -122,6 +132,22 @@ def resistance_callback_handler(call):
 
 
 
+#handles the callback from the inline keyboard in the new_game function 
+@bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "mafia")
+def resistance_callback_handler(call):
+
+    markup = types.InlineKeyboardMarkup()
+    markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
+               types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+
+    bot.edit_message_text("You have selected the game mafia\nTo play mafia we need 7 or more poeple", 
+                                                                            message_id=call.message.message_id, 
+                                                                            chat_id=call.message.chat.id, 
+                                                                            reply_markup=markup)
+    games[call.message.chat.id] = Mafia()
+    
+    
+    
 #built so it should be able to handle the join callback from more then one game
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "join")
 def join_callback_handler(call):
@@ -171,7 +197,7 @@ def start_callback_handler(call):
                     games[key].game_state = 0
                         
             #If the bot can not talk to everyone the game can not start        
-            if talk_to_everyone:		
+            if talk_to_everyone:
                 bot.send_message(key, output_message)
                 
                 output_message = games[key].setup_round()
@@ -188,7 +214,7 @@ def nominate_command_handler(message):
         bot.reply_to(message, "No game in this chat right now")
         return
             
-    if message.from_user.id == games[key].nominator_id and games[key].game_state == 2:
+    if message.from_user.id == games[key].nominator_id and games[key].game_state == 2 and games[key].game_code == 1:
         output_message = games[key].nominate_logic(message.entities, message.text)
         #nominate_logic will change game_state to 3 if the nominees are valid
         if games[key].game_state == 3:
@@ -210,6 +236,7 @@ def yea_nay_callback_handler(call):
     player_id = call.from_user.id
     
     if (games[key].game_state == 3
+    and games[key].game_code == 1
     and player_id in games[key].players_id 
     and player_id not in games[key].players_id_voted_on_mission):
     
@@ -250,6 +277,7 @@ def yea_nay_callback_handler(call):
                     bot.send_message(key, "ERROR!!!!\nSome one blocked me since the start of the game, I am sorry the game can not continue")
                     del games[key]
                     
+                
                     
 #takes the pass fail callbacks from private chats
 #informs user of mission result and then starts new round or ends game                   
@@ -260,6 +288,7 @@ def pass_fail_callback_handler(call):
     player_id = call.from_user.id
     
     if (games[key].game_state == 4 
+    and games[key].game_code == 1
     and player_id in games[key].players_id_going_on_mission 
     and player_id not in games[key].players_id_votes_from_mission):
         

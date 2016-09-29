@@ -7,6 +7,9 @@ from random import shuffle
 class Resistance:
 
     def __init__(self):
+        #code to tell what game is the object is
+        self.game_code = 1
+        
         #Min and Max number of players that can be in one game
         self.MIN_PLAYERS = 5
         self.MAX_PLAYERS = 10
@@ -39,7 +42,7 @@ class Resistance:
                 
         self.players_id = []
         self.number_of_players = 0
-        self.spys_id = []	
+        self.spys_id = []
         self.number_of_spys = 0
         
         self.player_ids_to_username = {}
@@ -65,7 +68,6 @@ class Resistance:
         self.points_resistance = 0
 
         
-        
     #takes a telegram users chat ID,  username and first name
     #returns a message if success or there can be no more players or returns None if a message should not be sent
     def add_player(self, player_id, player_username, player_name):
@@ -83,7 +85,6 @@ class Resistance:
         
         else:
             return None
-
             
     
     #uses internal var 
@@ -106,8 +107,7 @@ class Resistance:
         #shuffled again so turn order does not give away roles
         shuffle(self.players_id)
         self.game_state = 1
-        return "The game of Resistance has started! \nThere are "+str(self.number_of_spys) +" spies in the game"
-    
+        return "The game of Resistance has started! \nThere are "+str(self.number_of_spys) +" spies in the game"    
  
 
     #pause games 
@@ -118,7 +118,6 @@ class Resistance:
         if value == False:
             self.game_state = self.game_state_holder
             self.game_state_holder = None
-
 
 
     #take self and player chat id 
@@ -160,7 +159,6 @@ class Resistance:
                    +" players to go on the mission\n"+ extra_message
                    +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
 
-
                        
     #takes self an array of telegram chat entities and a chat messages text
     #returns message about whether the message was a valid nomination
@@ -192,7 +190,6 @@ class Resistance:
         self.game_state = 3
         return "Now everyone vote on the proposed mission party\nIf half or more of the vote are nay the next player will get to nominate"
 
-
     
     #takes self, telegram user id and callback data (a string)
     #does calculation, returns message if votes changes state
@@ -211,7 +208,6 @@ class Resistance:
         self.players_id_voted_on_mission.append(player_id)
  
         return output
-
         
     
     #takes self
@@ -220,7 +216,6 @@ class Resistance:
         self.mission_pass_votes = 0
         self.mission_fail_votes = 0
         self.players_id_votes_from_mission = []
-    
     
     
     #takes self and player chat id 
@@ -239,7 +234,6 @@ class Resistance:
             output += " are now going to go on a mission"
                 
         return output
-    
     
     
     #takes self, players id and string that is there vote on whether the mission passes or not
@@ -280,7 +274,6 @@ class Resistance:
         return output
     
 
-
     #takes self
     #returns a message about who won the game
     def who_won(self):
@@ -288,4 +281,71 @@ class Resistance:
             return "The resistance has scored 3 points!!!\nThe resistance has won the game"
         if self.points_spys == 3:
             return "The spies have scored 3 points!!!\nThe spies have won the game"
+    
+
+
+
+class Mafia:
+    
+    def __init__(self):
+        #code to tell what game is the object is
+        self.game_code = 2
+        
+        #Min and Max number of players that can be in one game
+        self.MIN_PLAYERS = 7
+        self.MAX_PLAYERS = 20
+        
+        self.game_state = 0
+        self.game_state_holder = None
+        """
+        state 0 = 
+        state 1 = 
+        state 2 = 
+        state 3 = 
+        state 4 = 
+        state 5 = 
+        state 6 = 
+        state 7 = game is paused (waiting for the game to be ended or continued)
+        """
+        self.round = 0
+                
+        self.players_id = []
+        self.number_of_players = 0
+        
+        self.player_ids_to_username = {}
+        self.player_usernames_to_id = {}
+        
+        
+    def add_player(self, player_id, player_username, player_name):
+        if player_username == None:
+            return "I am sorry "+ player_name +" but you must have an @UserName to play"
+        
+        if len(self.players_id) == self.MAX_PLAYERS:
+            return "I am sorry @"+ player_username +" but we already have the max number of player for this game"
+       
+        if player_id not in self.players_id: 
+            self.players_id.append(player_id)
+            self.player_ids_to_username[player_id] = player_username
+            self.player_usernames_to_id[player_username] = player_id
+            return "@"+ player_username +" has joined the game"
+        
+        else:
+            return None
+            
+            
+    def setup_game(self):
+        return
+        
+    #pause games 
+    def pause_game(self, value):
+        if value == True:
+            self.game_state_holder = self.game_state
+            self.game_state = 7
+        if value == False:
+            self.game_state = self.game_state_holder
+            self.game_state_holder = None
+        
+        
+    def player_roll_info(self, player_id):
+        return
     
