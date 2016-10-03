@@ -208,7 +208,8 @@ def play_round(key):
     if games[key].game_code == 1:
         output_message = games[key].setup_round()
         bot.send_message(key, output_message)
-    if games[key].game_code == 2:      
+    if games[key].game_code == 2:    
+        
         bot.send_message(key,"Mafia")
 
 

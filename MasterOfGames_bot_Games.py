@@ -346,6 +346,7 @@ class Mafia:
         
         shuffle(self.players_id)
         self.number_of_mafia = int(math.floor(self.number_of_players/3))
+        self.mafia_ids = []
         for i in range(self.number_of_mafia):
             self.mafia_ids.append(self.players_id[i])
             
@@ -367,5 +368,22 @@ class Mafia:
         
         
     def player_roll_info(self, player_id):
-        return
+        if player_id == self.detective_id:
+            return "You are the detective"
+        if player_id == self.doctor_id:
+            return "You are the doctor"
+        if player_id in self.mafia_ids:
+            output = "You are part of the Mafia\nThe other Mafia members in this game are:\n"
+            for i in range(self.number_of_mafia):
+                if player_id != self.mafia_ids[i]:
+                    output += "@" + str(self.player_ids_to_username[self.mafia_ids[i]]) + "\n"
+            return output
+        else:
+            return "You are a innocent townsperon"
+
+
+#    def night_logic(self, ):
+    
+    
+ #   def day_logic(self, ):
     
