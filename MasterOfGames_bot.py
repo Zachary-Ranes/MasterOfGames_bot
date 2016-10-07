@@ -5,6 +5,7 @@ import configparser
 import telebot
 from telebot import types
 from MasterOfGames_bot_Games import Resistance
+from MasterOfGames_bot_Games import Mafia
 
 #This loads a config file that holds the bots API key
 config = configparser.ConfigParser()
@@ -105,7 +106,8 @@ def new_game_command_handler(message):
     if (message.chat.type == "group" and message.chat.id not in games 
      or message.chat.type == "supergroup" and message.chat.id not in games):
         markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"))
+        markup.row(types.InlineKeyboardButton(callback_data="resistance", text="Resistance"),
+                   types.InlineKeyboardButton(callback_data="mafia", text="Mafia"))
         bot.send_message(message.chat.id, "Which game would you like to play?", reply_markup=markup)
         return
 
@@ -127,6 +129,22 @@ def resistance_callback_handler(call):
                                                                             chat_id=call.message.chat.id, 
                                                                             reply_markup=markup)
     games[call.message.chat.id] = Resistance()
+    
+
+
+#handles the callback from the inline keyboard in the new_game function 
+@bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "mafia")
+def mafia_callback_handler(call):
+
+    markup = types.InlineKeyboardMarkup()
+    markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
+               types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+
+    bot.edit_message_text("You have selected the game mafia\nTo play mafia we need 7 or more poeple", 
+                                                                            message_id=call.message.message_id, 
+                                                                            chat_id=call.message.chat.id, 
+                                                                            reply_markup=markup)
+    games[call.message.chat.id] = Mafia()
     
     
     
@@ -190,6 +208,8 @@ def play_round(key):
     if games[key].game_code == 1:
         output_message = games[key].setup_round()
         bot.send_message(key, output_message)
+    if games[key].game_code == 2:    
+        bot.send_message(key,"Mafia")
 
 
 
