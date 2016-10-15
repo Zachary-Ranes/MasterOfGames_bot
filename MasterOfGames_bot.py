@@ -1,14 +1,14 @@
 #Author: Zachary Ranes
-#Written in Python 3.4, requires eternnoir/pyTelegramBotAPI to run
+#Written in Python 2.7, requires eternnoir/pyTelegramBotAPI to run
 
-import configparser
+import ConfigParser
 import telebot
 from telebot import types
 from MasterOfGames_bot_Games import Resistance
 from MasterOfGames_bot_Games import Mafia
 
 #This loads a config file that holds the bots API key
-config = configparser.ConfigParser()
+config = ConfigParser.ConfigParser()
 config.read("MasterOfGames_bot_config.cfg")
 
 #The bot object is the go between the telegram API and the python code

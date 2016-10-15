@@ -1,10 +1,60 @@
 #Author: Zachary Ranes
-#Written in Python 3.4, requires eternnoir/pyTelegramBotAPI to run
+#Written in Python 2.7, requires eternnoir/pyTelegramBotAPI to run
 
 import math
 from random import shuffle
+
+
+class Game:
+    
+    def __init__(self):
+        #
+        self.game_code = None
         
-class Resistance:
+        #
+        self.MIN_PLAYERS = None
+        self.Max_PLAYERS = None
+        
+        #
+        self.game_state = None
+        self.game_state_holder = None
+        
+        #
+        self.players_id = []
+        self.number_of_players = None
+        
+        #
+        self.player_ids_to_username = {}
+        self.player_usernames_to_id = {}
+     
+        
+    #
+    def add_player(self, player_id, player_username, player_name):
+        return
+        
+        
+    #
+    def setup_game(self):
+        return
+        
+        
+    #
+    def player_roll_info(self, player_id):
+        return
+    
+        
+    #
+    def pause_game(self, value):
+        if value == True:
+            self.game_state_holder = self.game_state
+            self.game_state = 7
+        if value == False:
+            self.game_state = self.game_state_holder
+            self.game_state_holder = None
+
+
+        
+class Resistance(Game):
 
     def __init__(self):
         #code to tell what game is the object is
@@ -27,7 +77,6 @@ class Resistance:
                                     self.EIGHT_PLUS_PLAYERS]
 
         self.game_state = 0
-        self.game_state_holder = None
         """
         state 0 = game has not start (players can still join)
         state 1 = the game has started (players cant hit join)
@@ -109,16 +158,6 @@ class Resistance:
         self.game_state = 1
         return "The game of Resistance has started! \nThere are "+str(self.number_of_spys) +" spies in the game"    
  
-
-    #pause games 
-    def pause_game(self, value):
-        if value == True:
-            self.game_state_holder = self.game_state
-            self.game_state = 7
-        if value == False:
-            self.game_state = self.game_state_holder
-            self.game_state_holder = None
-
 
     #take self and player chat id 
     #returns what roll in the game the player is and if spy who the other spies are
@@ -296,7 +335,6 @@ class Mafia:
         self.MAX_PLAYERS = 20
         
         self.game_state = 0
-        self.game_state_holder = None
         """
         state 0 = 
         state 1 = 
@@ -355,16 +393,6 @@ class Mafia:
         
         self.game_state = 1
         return "The game of Mafia has started! \nThere are"+ self.number_of_mafia + "mafia members in the group."
-        
-        
-    #pause games 
-    def pause_game(self, value):
-        if value == True:
-            self.game_state_holder = self.game_state
-            self.game_state = 7
-        if value == False:
-            self.game_state = self.game_state_holder
-            self.game_state_holder = None
         
         
     def player_roll_info(self, player_id):
