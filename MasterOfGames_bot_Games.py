@@ -26,7 +26,11 @@ class Game(object):
         #
         self.players_id_to_username = {}
         self.players_username_to_id = {}
-     
+        
+        #
+        self.message_for_group = None
+        self.message_for_players = {}
+    
         
     #takes a telegram users chat ID,  username and first name
     #returns a message if success or there can be no more players or returns None if a message should not be sent
@@ -54,7 +58,7 @@ class Game(object):
         if self.number_of_players < self.MIN_PLAYERS:
             return ("Not enough players have joined to start the game \nYou need "+str(self.MIN_PLAYERS)
                       +" to "+str(self.MAX_PLAYERS)+" people to play, "+str(self.number_of_players) +" players have joined")
-        else
+        else:
             self.game_state = 1
             return None
         
@@ -62,8 +66,8 @@ class Game(object):
     #
     def setup_game(self):
         pass
-        
-        
+            
+            
     #
     def pause_game(self, value):
         if value == True:
@@ -72,8 +76,17 @@ class Game(object):
         if value == False:
             self.game_state = self.game_state_before_pause
             self.game_state_before_pause = None
-
-
+            
+        
+    #
+    def list_usernames(self, exclude_id, list_of_player_ids):
+        output = ""
+        for player_id in list_of_player_ids:
+            if player_id != exclude_id:
+                output += " @" + players_id_to_username[player_id]
+        return output
+    
+        
         
 class Resistance(Game):
 
@@ -105,6 +118,7 @@ class Resistance(Game):
         """
         self.round = 0
                 
+        self.ids_of_resistances = []
         self.ids_of_spies = []
         self.number_of_spies = 0
         
@@ -129,24 +143,32 @@ class Resistance(Game):
 
     
     #uses internal var 
-    #returns a message of number of playres lacking or changes game_state to 1 and returns number of spicy in the game string
+    #returns nothing
     def setup_game(self):
-
-        
-        self.number_of_spys = int(math.ceil(self.number_of_players/3))
+        self.number_of_spies = int(math.ceil(self.number_of_players/3))
         #shuffling user IDs so the roles are not determined by what order people joined the game
-        shuffle(self.players_id)
+        shuffle(self.ids_of_players)
 
-        self.spys_id = []
-        for i in range(self.number_of_spys):
-            self.spys_id.append(self.players_id[i])
+        for i in range(self.number_of_spies):
+            self.ids_of_spies.append(self.ids_of_players[i])
+        
+        for player_id in self.ids_of_players:
+            if player_id not in self.ids_of_spies:
+                self.ids_of_resistances.append(player_id)
+                
+        self.message_for_group = "The game of Resistance has started! \nThere are "+ str(self.number_of_spys) +" spies in the game"
+        
+        for player_id in self.ids_of_resistances:
+            message_for_players[player_id] = "You are part of the Resistance\nYou win when 3 missions succeed"
+            
+        for player_id in self.ids_of_spies:
+            message_for_players[player_id] = "You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, ids_of_spies)
 
         #shuffled again so turn order does not give away roles
-        shuffle(self.players_id)
-        self.game_state = 1
-        return "The game of Resistance has started! \nThere are "+str(self.number_of_spys) +" spies in the game"    
- 
+        shuffle(self.ids_of_players)
 
+ 
+"""
     #take self and player chat id 
     #returns what roll in the game the player is and if spy who the other spies are
     def player_roll_info(self, player_id):
@@ -309,7 +331,7 @@ class Resistance(Game):
         if self.points_spys == 3:
             return "The spies have scored 3 points!!!\nThe spies have won the game"
 
-
+"""
 
 class Mafia(Game):
     pass

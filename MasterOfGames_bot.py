@@ -159,7 +159,7 @@ def callback_join(call):
 def callback_start(call):
     key = call.message.chat.id
 
-    if games[key].game_state == 0 and call.from_user.id in games[key].players_id:
+    if games[key].game_state == 0 and call.from_user.id in games[key].ids_of_players    :
         #enough_players will change game state to 1 if there are enough players and return an output if there are not
         output_message = games[key].enough_players()
     
@@ -192,9 +192,28 @@ def callback_start(call):
                         
             #If the bot can not talk to everyone the game can not start        
             if talk_to_everyone:
-                ?????????
+                games[key].setup_game()
+                message_all_players(key)
+                setup_round(key)
                 
    
+#
+def message_all_players(key):
+    if games[key].message_for_group != None:
+        bot.send_message(key, games[key].message_for_group)
+    for i in range(games[key].number_of_players):
+        player_id = games[key].ids_of_players[i]
+        try:
+            bot.send_message(player_id, games[key].message_for_players[player_id])
+        except:
+            pass
+    
+
+#
+def setup_round(key):
+    pass
+    
+        
 """                
 #diffrent games have difrent round setup this can handle them all and is call more then once in every game type
 def all_games_play_round(key):
