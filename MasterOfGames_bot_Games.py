@@ -66,7 +66,17 @@ class Game(object):
     #
     def setup_game(self):
         pass
-            
+        
+        
+    #
+    def setup_round(self):
+        pass
+        
+        
+    #
+    def check_for_winner(self):
+        pass
+              
             
     #
     def pause_game(self, value):
@@ -90,7 +100,7 @@ class Game(object):
         
 class Resistance(Game):
 
-    def __init__(self, game_code = 1, min_players = 5, max_players = 10):
+    def __init__(self, game_code = 1, min_players = 1, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
    
         #This 2d array is the number of player in the game vs the number of player what will be needed for each round of the game 
@@ -116,7 +126,7 @@ class Resistance(Game):
         game_state = 5 : game has ending one team has scored 3 points
         game_state = -1 = game is paused (waiting for the game to be ended or continued)
         """
-        self.round = 0
+        self.game_round = 0
                 
         self.ids_of_resistances = []
         self.ids_of_spies = []
@@ -156,36 +166,22 @@ class Resistance(Game):
             if player_id not in self.ids_of_spies:
                 self.ids_of_resistances.append(player_id)
                 
-        self.message_for_group = "The game of Resistance has started! \nThere are "+ str(self.number_of_spys) +" spies in the game"
+        self.message_for_group = "The game of Resistance has started! \nThere are "+ str(self.number_of_spies) +" spies in the game."
         
         for player_id in self.ids_of_resistances:
-            message_for_players[player_id] = "You are part of the Resistance\nYou win when 3 missions succeed"
+            self.message_for_players[player_id] = "You are part of the Resistance\nYou win when 3 missions succeed"
             
         for player_id in self.ids_of_spies:
-            message_for_players[player_id] = "You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, ids_of_spies)
+            self.message_for_players[player_id] = "You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, ids_of_spies)
 
         #shuffled again so turn order does not give away roles
         shuffle(self.ids_of_players)
 
  
-"""
-    #take self and player chat id 
-    #returns what roll in the game the player is and if spy who the other spies are
-    def player_roll_info(self, player_id):
-        if player_id not in self.spys_id:
-            return "You are part of the Resistance"
-        else:
-            output = "You are a Spy\nThe other spy in this game are:\n"
-            for i in range(len(self.spys_id)):
-                if player_id != self.spys_id[i]:
-                    output += "@" + str(self.player_ids_to_username[self.spys_id[i]]) + "\n"
-            return output
-        
-        
     #takes self
     #return message who gets to nominate and if there are special rules this round
     def setup_round(self):
-        self.nominator_id = self.players_id[self.last_nominator_index]   
+        self.id_of_nominator = self.ids_of_players[self.last_nominator_index]   
          
         self.last_nominator_index += 1
         
@@ -194,26 +190,37 @@ class Resistance(Game):
         
 
         #This if else is for the rule that some missions in the game will need two fail votes to fail
-        if self.round == 3 and self.number_of_players >= 7:
+        if self.game_round == 3 and self.number_of_players >= 7:
             self.two_fail_mission = True
             extra_message = "This round requries two spys to vote for failure to fail\n"
         else:
             self.two_fail_mission = False
             extra_message = ""
 
-        self.number_of_nominees = self.PLAYERS_PER_ROUND[self.number_of_players-self.MIN_PLAYERS][self.round]
+        self.number_of_nominees = self.PLAYERS_PER_ROUND[self.number_of_players-self.MIN_PLAYERS][self.game_round]
         self.game_state = 2
-        return ("@"+ self.player_ids_to_username[self.nominator_id] 
-                   +" gets to nominate "+ str(self.number_of_nominees) 
-                   +" players to go on the mission\n"+ extra_message
-                   +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
+        self.message_for_group = ("@"+ self.players_id_to_username[self.nominator_id] 
+                                 +" gets to nominate "+ str(self.number_of_nominees) 
+                                 +" players to go on the mission\n"+ extra_message
+                                 +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
+    
+    
+    #
+    def check_for_winner(self):
+        if self.points_resistance == 3:
+            self.game_state = 5
+            self.message_for_group = "The resistance has scored 3 points!!!\nThe resistance has won the game"
+            
+        if self.points_spies == 3:
+            self.game_state = 5
+            self.message_for_group = "The spies have scored 3 points!!!\nThe spies have won the game"
 
-                       
+                     
     #takes self an array of telegram chat entities and a chat messages text
     #returns message about whether the message was a valid nomination
     def nominate_logic(self, entities, text):
         mentioned = []
-        self.players_id_going_on_mission = []
+        self.ids_of_players_going_on_mission = []
         for i in range(len(entities)):
             if entities[i].type == "mention":
                 starting_index = entities[i].offset +1
@@ -226,20 +233,20 @@ class Resistance(Game):
                       +" players \nDo this by typing /nominate then the username of the players you want to nominate all in the same message")
 
         for i in range(len(mentioned)):
-            if mentioned[i] not in self.player_usernames_to_id:
+            if mentioned[i] not in self.players_username_to_id:
                 return "You nominated someone not playing"
-            if self.player_usernames_to_id[mentioned[i]] in self.players_id_going_on_mission:
+            if self.players_username_to_id[mentioned[i]] in self.ids_of_players_going_on_mission:
                 return "You nominated someone more than once"
             else:
-                self.players_id_going_on_mission.append(self.player_usernames_to_id[mentioned[i]])
+                self.ids_of_players_going_on_mission.append(self.players_username_to_id[mentioned[i]])
 
-        self.players_id_voted_on_mission = []
+        self.ids_of_players_voted_on_nominees = []
         self.mission_yea_votes = 0
         self.mission_nay_votes = 0
         self.game_state = 3
         return "Now everyone vote on the proposed mission party\nIf half or more of the vote are nay the next player will get to nominate"
 
-    
+ """     
     #takes self, telegram user id and callback data (a string)
     #does calculation, returns message if votes changes state
     def vote_logic(self, player_id, vote):
@@ -310,7 +317,7 @@ class Resistance(Game):
                 self.points_resistance += 1
                 output =  ("Mission passed!!!! \n")
 
-            self.round += 1
+            self.game_round += 1
             output += ("The score is now:\n "
                         + str(self.points_resistance) +" for the Resistance \n"
                         + str(self.points_spys) +" for the Spies")
@@ -323,13 +330,7 @@ class Resistance(Game):
         return output
     
 
-    #takes self
-    #returns a message about who won the game
-    def who_won(self):
-        if self.points_resistance == 3:
-            return "The resistance has scored 3 points!!!\nThe resistance has won the game"
-        if self.points_spys == 3:
-            return "The spies have scored 3 points!!!\nThe spies have won the game"
+
 
 """
 

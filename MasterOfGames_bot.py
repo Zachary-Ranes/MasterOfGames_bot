@@ -47,13 +47,13 @@ def command_help(message):
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_resistance'])
 def command_rules_resistance(message):
-    bot.reply_to(message, "Da Rules (Placeholder)")
+    pass
 
 
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_mafia'])
 def command_rules_mafia(message):
-    bot.reply_to(message, "Da Rules (Placeholder)")
+    pass
 
 
 #because sometimes game need to be stopped or reset before the game ends
@@ -193,41 +193,39 @@ def callback_start(call):
             #If the bot can not talk to everyone the game can not start        
             if talk_to_everyone:
                 games[key].setup_game()
-                message_all_players(key)
-                setup_round(key)
+                message_players(key)
+                play_round(key)
                 
    
 #
-def message_all_players(key):
+def message_players(key):
     if games[key].message_for_group != None:
         bot.send_message(key, games[key].message_for_group)
-    for i in range(games[key].number_of_players):
-        player_id = games[key].ids_of_players[i]
+        
+    for player_id in games[key].message_for_players:
         try:
             bot.send_message(player_id, games[key].message_for_players[player_id])
         except:
+            #may want to put stuff here about someone leaving the game / blocking the bot mid game
             pass
     
 
 #
-def setup_round(key):
-    pass
+def play_round(key):
+    games[key].check_for_winner()
     
-        
-"""                
-#diffrent games have difrent round setup this can handle them all and is call more then once in every game type
-def all_games_play_round(key):
-    if games[key].game_code == 1:
-        output_message = games[key].setup_round()
-        bot.send_message(key, output_message)
-    if games[key].game_code == 2:    
-        bot.send_message(key,"Mafia")
-
-
+    if games[key].game_state == 1:
+        games[key].setup_round()
+    
+    bot.send_message(key, games[key].message_for_group)
+    
+    if games[key].game_state == 5
+        del games[key] 
+    
 
 #handles the nominate command for resistance, nominate_logic can't just be passed message becouse it losses text when passing or atleast apears to 
 @bot.message_handler(commands=['nominate'])
-def resistance_command_nominate(message):
+def game1_command_nominate(message):
     key = message.chat.id
 
     if key not in games:
@@ -245,13 +243,12 @@ def resistance_command_nominate(message):
         else:
             bot.reply_to(message, output_message)
             
-            
-            
+                """
 #takes the yea and nay callbacks
 #if game state changes it will run the code to setup for a new nominator or it will run code for the mission to start      
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "nay" 
                                       or call.message.chat.id in games and call.data == "yea")
-def resistance_callback_yea_or_nay(call):
+def game1_callback_yea_or_nay(call):
     key = call.message.chat.id
     player_id = call.from_user.id
     
@@ -297,7 +294,7 @@ def resistance_callback_yea_or_nay(call):
                     del games[key]
                     
                 
-                    
+            
 #takes the pass fail callbacks from private chats
 #informs user of mission result and then starts new round or ends game                   
 @bot.callback_query_handler(lambda call: call.data[0:4] == "pass" and int(call.data[4:]) in games 
