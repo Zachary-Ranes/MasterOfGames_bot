@@ -1,6 +1,8 @@
 #Author: Zachary Ranes
 #Written in Python 2.7, requires eternnoir/pyTelegramBotAPI to run
 
+import telebot
+from telebot import types
 import math
 from random import shuffle
 
@@ -28,7 +30,7 @@ class Game(object):
         self.players_username_to_id = {}
         
         #
-        self.message_for_group = None
+        self.message_for_group = []
         self.message_for_players = {}
     
         
@@ -56,11 +58,10 @@ class Game(object):
         self.number_of_players = len(self.ids_of_players)
         
         if self.number_of_players < self.MIN_PLAYERS:
-            return ("Not enough players have joined to start the game \nYou need "+str(self.MIN_PLAYERS)
+            self.message_for_group[0] = ("Not enough players have joined to start the game \nYou need "+str(self.MIN_PLAYERS)
                       +" to "+str(self.MAX_PLAYERS)+" people to play, "+str(self.number_of_players) +" players have joined")
         else:
             self.game_state = 1
-            return None
         
         
     #
@@ -100,8 +101,14 @@ class Game(object):
         
 class Resistance(Game):
 
-    def __init__(self, game_code = 1, min_players = 1, max_players = 10):
+    def __init__(self, game_code = 1, min_players = 5, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
+   
+        self.markup = types.InlineKeyboardMarkup()
+        self.markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
+                        types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+   
+        self.message_for_group = ["You have selected the game resistance\nTo play resistance we need 5 to 10 people", self.markup]
    
         #This 2d array is the number of player in the game vs the number of player what will be needed for each round of the game 
         self.FIVE_PLAYERS = [2,3,2,3,3]
@@ -166,16 +173,17 @@ class Resistance(Game):
             if player_id not in self.ids_of_spies:
                 self.ids_of_resistances.append(player_id)
                 
-        self.message_for_group = "The game of Resistance has started! \nThere are "+ str(self.number_of_spies) +" spies in the game."
+        self.message_for_group[0] = "The game of Resistance has started! \nThere are "+ str(self.number_of_spies) +" spies in the game."
         
         for player_id in self.ids_of_resistances:
-            self.message_for_players[player_id] = "You are part of the Resistance\nYou win when 3 missions succeed"
+            self.message_for_players[player_id] = ("You are part of the Resistance\nYou win when 3 missions succeed", None)
             
         for player_id in self.ids_of_spies:
-            self.message_for_players[player_id] = "You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, ids_of_spies)
+            self.message_for_players[player_id] = ("You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, ids_of_spies), None)
 
         #shuffled again so turn order does not give away roles
         shuffle(self.ids_of_players)
+        self.game_state = 2
 
  
     #takes self
@@ -198,24 +206,24 @@ class Resistance(Game):
             extra_message = ""
 
         self.number_of_nominees = self.PLAYERS_PER_ROUND[self.number_of_players-self.MIN_PLAYERS][self.game_round]
-        self.game_state = 2
-        self.message_for_group = ("@"+ self.players_id_to_username[self.nominator_id] 
+        self.message_for_group[0] = ("@"+ self.players_id_to_username[self.id_of_nominator] 
                                  +" gets to nominate "+ str(self.number_of_nominees) 
                                  +" players to go on the mission\n"+ extra_message
                                  +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
+        
     
     
     #
     def check_for_winner(self):
         if self.points_resistance == 3:
             self.game_state = 5
-            self.message_for_group = "The resistance has scored 3 points!!!\nThe resistance has won the game"
+            self.message_for_group[0] = "The resistance has scored 3 points!!!\nThe resistance has won the game"
             
         if self.points_spies == 3:
             self.game_state = 5
-            self.message_for_group = "The spies have scored 3 points!!!\nThe spies have won the game"
+            self.message_for_group[0] = "The spies have scored 3 points!!!\nThe spies have won the game"
 
-                     
+               
     #takes self an array of telegram chat entities and a chat messages text
     #returns message about whether the message was a valid nomination
     def nominate_logic(self, entities, text):
@@ -229,24 +237,40 @@ class Resistance(Game):
                 mentioned.append(username_without_at)
 
         if len(mentioned) != self.number_of_nominees:
-            return ("You nominated the wrong number of players\nYou need to nominate "+ str(self.number_of_nominees) 
-                      +" players \nDo this by typing /nominate then the username of the players you want to nominate all in the same message")
+            self.message_for_group[0] = ("You nominated the wrong number of players\nYou need to nominate "+ str(self.number_of_nominees) 
+                                        +" players \nDo this by typing /nominate then the username of the players you want to nominate all in the same message")
+            self.message_for_group[1] = None
+            return
 
         for i in range(len(mentioned)):
             if mentioned[i] not in self.players_username_to_id:
-                return "You nominated someone not playing"
+                self.message_for_group[0] = "You nominated someone not playing"
+                self.message_for_group[1] = None
+                return
+                
             if self.players_username_to_id[mentioned[i]] in self.ids_of_players_going_on_mission:
-                return "You nominated someone more than once"
+                self.message_for_group[0] = "You nominated someone more than once"
+                self.message_for_group[1] = None
+                return
+                
             else:
                 self.ids_of_players_going_on_mission.append(self.players_username_to_id[mentioned[i]])
 
         self.ids_of_players_voted_on_nominees = []
         self.mission_yea_votes = 0
         self.mission_nay_votes = 0
+        
+        self.markup = types.InlineKeyboardMarkup()
+        self.markup.row(types.InlineKeyboardButton(callback_data="yea", text="Yea"), 
+                        types.InlineKeyboardButton(callback_data="nay", text="Nay"))
+        
+        self.message_for_group[0] = "Now everyone vote on the proposed mission party\nIf half or more of the vote are nay the next player will get to nominate"
+        self.message_for_group[1] = self.markup
+        
         self.game_state = 3
-        return "Now everyone vote on the proposed mission party\nIf half or more of the vote are nay the next player will get to nominate"
+        return
 
- """     
+
     #takes self, telegram user id and callback data (a string)
     #does calculation, returns message if votes changes state
     def vote_logic(self, player_id, vote):
@@ -260,37 +284,36 @@ class Resistance(Game):
             if self.mission_nay_votes >= self.number_of_players/2:
                 self.game_state = 2
 
-        output = "@"+ self.player_ids_to_username[player_id] +" has voted "+ vote
-        self.players_id_voted_on_mission.append(player_id)
- 
-        return output
+        self.message_for_group[0] = "@"+ self.players_id_to_username[player_id] +" has voted "+ vote
+        self.ids_of_players_voted_on_nominees.append(player_id)
+
         
-    
+  
     #takes self
     #setup for var for a mission 
-    def setup_mission(self):
+    def setup_mission(self, key):
         self.mission_pass_votes = 0
         self.mission_fail_votes = 0
-        self.players_id_votes_from_mission = []
-    
-    
-    #takes self and player chat id 
-    #returns message of who else is on the current mission with them
-    def mission_info(self, player_id):
-        output = "You are on a mission with "
+        self.ids_of_players_voted_from_mission = []
 
-        if player_id == None:
-            output = "Enough yeas have been cast, "
+        self.message_for_group[0] = "Enough yea votes have been cast,"+ self.list_usernames(self, None, self.ids_of_players_going_on_mission) +" are now going on a mission"
+        
+        #these two markups add the group chats Id (key) to there callback data so the callback can be associated to the group chat
+        markup_resistance = types.InlineKeyboardMarkup()
+        markup_resistance.row(types.InlineKeyboardButton(callback_data="pass"+str(key), text="Pass"))
+        
+        markup_spies = types.InlineKeyboardMarkup()
+        markup_spies.row(types.InlineKeyboardButton(callback_data="pass"+str(key), text="Pass"), 
+                        types.InlineKeyboardButton(callback_data="fail"+str(key), text="Fail"))
+             
+        self.message_for_players = {}
+
+        for player_id in ids_of_players_going_on_mission:
+            if player_id in ids_of_resistances:
+                message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(self, player_id, self.ids_of_players_going_on_mission), markup_resistance)
+            if player_id in ids_of_spies:
+                message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(self, player_id, self.ids_of_players_going_on_mission), markup_spies)
                 
-        for i in range(len(self.players_id_going_on_mission)):
-            if player_id != self.players_id_going_on_mission[i]:
-                output += " @" + self.player_ids_to_username[self.players_id_going_on_mission[i]] 
-                    
-        if player_id == None:
-            output += " are now going to go on a mission"
-                
-        return output
-    
     
     #takes self, players id and string that is there vote on whether the mission passes or not
     #changes games state to 2 if the voting round is over or to state 5 if that was the last round
@@ -299,40 +322,29 @@ class Resistance(Game):
         if vote == "pass":
             self.mission_pass_votes += 1
         
-        if vote == "fail" and player_id in self.spys_id:
+        if vote == "fail" and player_id in self.ids_of_spies:
             self.mission_fail_votes += 1
         
-        self.players_id_votes_from_mission.append(player_id)
+        self.ids_of_players_voted_from_mission.append(player_id)
 
-        output = None
-
-        if len(self.players_id_going_on_mission) == len(self.players_id_votes_from_mission):
+        if len(self.ids_of_players_going_on_mission) == len(self.ids_of_players_voted_from_mission):
            
             if (self.mission_fail_votes >= 1 and self.two_fail_mission == False 
              or self.mission_fail_votes >= 2 and self.two_fail_mission == True):
-                self.points_spys += 1
-                output = ("Mission fails !!!!!\n") 
+                self.points_spies += 1
+                self.message_for_group[0] = ("Mission fails !!!!!\n") 
                          
             else:
                 self.points_resistance += 1
-                output =  ("Mission passed!!!! \n")
+                self.message_for_group[0] =  ("Mission passed!!!! \n")
 
             self.game_round += 1
-            output += ("The score is now:\n "
-                        + str(self.points_resistance) +" for the Resistance \n"
-                        + str(self.points_spys) +" for the Spies")
+            self.message_for_group[0] += ("The score is now:\n "
+                                            + str(self.points_resistance) +" for the Resistance \n"
+                                            + str(self.points_spys) +" for the Spies")
             self.game_state = 2
-            
-            if self.points_spys == 3 or self.points_resistance == 3:
-                self.game_state = 5
-            
-            
-        return output
-    
 
 
-
-"""
 
 class Mafia(Game):
     pass
