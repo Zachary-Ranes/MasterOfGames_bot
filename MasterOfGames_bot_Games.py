@@ -89,19 +89,19 @@ class Game(object):
         output = ""
         for player_id in list_of_player_ids:
             if player_id != exclude_id:
-                output += " @" + players_id_to_username[player_id]
+                output += " @" + self.players_id_to_username[player_id]
         return output
     
         
         
 class Resistance(Game):
 
-    def __init__(self, game_code = 1, min_players = 5, max_players = 10):
+    def __init__(self, game_code = 1, min_players = 3, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
    
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
-                        types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+                   types.InlineKeyboardButton(callback_data="start", text="Start Game"))
    
         self.message_for_group = ["You have selected the game resistance\nTo play resistance we need 5 to 10 people", markup]
    
@@ -174,7 +174,7 @@ class Resistance(Game):
             self.message_for_players[player_id] = ("You are part of the Resistance\nYou win when 3 missions succeed", None)
             
         for player_id in self.ids_of_spies:
-            self.message_for_players[player_id] = ("You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, ids_of_spies), None)
+            self.message_for_players[player_id] = ("You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, self.ids_of_spies), None)
 
         #shuffled again so turn order does not give away roles
         shuffle(self.ids_of_players)
@@ -291,7 +291,7 @@ class Resistance(Game):
         self.mission_fail_votes = 0
         self.ids_of_players_voted_from_mission = []
 
-        self.message_for_group[0] = "Enough yea votes have been cast,"+ self.list_usernames(self, None, self.ids_of_players_going_on_mission) +" are now going on a mission"
+        self.message_for_group[0] = "Enough yea votes have been cast,"+ self.list_usernames(None, self.ids_of_players_going_on_mission) +" are now going on a mission"
         
         #these two markups add the group chats Id (key) to there callback data so the callback can be associated to the group chat
         markup_resistance = types.InlineKeyboardMarkup()
@@ -303,11 +303,11 @@ class Resistance(Game):
              
         self.message_for_players = {}
 
-        for player_id in ids_of_players_going_on_mission:
-            if player_id in ids_of_resistances:
-                message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(self, player_id, self.ids_of_players_going_on_mission), markup_resistance)
-            if player_id in ids_of_spies:
-                message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(self, player_id, self.ids_of_players_going_on_mission), markup_spies)
+        for player_id in self.ids_of_players_going_on_mission:
+            if player_id in self.ids_of_resistances:
+                self.message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(player_id, self.ids_of_players_going_on_mission), markup_resistance)
+            if player_id in self.ids_of_spies:
+                self.message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(player_id, self.ids_of_players_going_on_mission), markup_spies)
                 
     
     #takes self, players id and string that is there vote on whether the mission passes or not
@@ -336,7 +336,7 @@ class Resistance(Game):
             self.game_round += 1
             self.message_for_group[0] += ("The score is now:\n "
                                             + str(self.points_resistance) +" for the Resistance \n"
-                                            + str(self.points_spys) +" for the Spies")
+                                            + str(self.points_spies) +" for the Spies")
             self.game_state = 2
 
 
@@ -348,7 +348,7 @@ class Mafia(Game):
 
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
-                        types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+                   types.InlineKeyboardButton(callback_data="start", text="Start Game"))
 
         self.message_for_group = ["You have selected the game mafia\nTo play mafia we need 7 to 21 people", markup]
         

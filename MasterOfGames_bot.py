@@ -206,12 +206,12 @@ def message_players(key):
 @bot.message_handler(commands=['nominate'])
 def game1_command_nominate(message):
     key = message.chat.id
-
-    if message.from_user.id == games[key].nominator_id and games[key].game_state == 2 and games[key].game_code == 1:
-        games[key].nominate_logic(message.entities, message.text)
-        #nominate_logic will change game_state to 3 if the nominees are valid
-        bot.reply_to(message, games[key].message_for_group[0], reply_markup=games[key].message_for_group[1])
-            
+    if key in games:
+        if message.from_user.id == games[key].id_of_nominator and games[key].game_state == 2 and games[key].game_code == 1:
+            games[key].nominate_logic(message.entities, message.text)
+            #nominate_logic will change game_state to 3 if the nominees are valid
+            bot.reply_to(message, games[key].message_for_group[0], reply_markup=games[key].message_for_group[1])
+                
     else:
         bot.reply_to(message, "There's a time and place for everything, but not now")
 
