@@ -72,11 +72,6 @@ class Game(object):
     #
     def setup_round(self):
         pass
-        
-        
-    #
-    def check_for_winner(self):
-        pass
               
             
     #
@@ -104,11 +99,11 @@ class Resistance(Game):
     def __init__(self, game_code = 1, min_players = 5, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
    
-        self.markup = types.InlineKeyboardMarkup()
-        self.markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
                         types.InlineKeyboardButton(callback_data="start", text="Start Game"))
    
-        self.message_for_group = ["You have selected the game resistance\nTo play resistance we need 5 to 10 people", self.markup]
+        self.message_for_group = ["You have selected the game resistance\nTo play resistance we need 5 to 10 people", markup]
    
         #This 2d array is the number of player in the game vs the number of player what will be needed for each round of the game 
         self.FIVE_PLAYERS = [2,3,2,3,3]
@@ -260,12 +255,12 @@ class Resistance(Game):
         self.mission_yea_votes = 0
         self.mission_nay_votes = 0
         
-        self.markup = types.InlineKeyboardMarkup()
-        self.markup.row(types.InlineKeyboardButton(callback_data="yea", text="Yea"), 
-                        types.InlineKeyboardButton(callback_data="nay", text="Nay"))
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton(callback_data="yea", text="Yea"), 
+                   types.InlineKeyboardButton(callback_data="nay", text="Nay"))
         
         self.message_for_group[0] = "Now everyone vote on the proposed mission party\nIf half or more of the vote are nay the next player will get to nominate"
-        self.message_for_group[1] = self.markup
+        self.message_for_group[1] = markup
         
         self.game_state = 3
         return
@@ -347,4 +342,20 @@ class Resistance(Game):
 
 
 class Mafia(Game):
-    pass
+    
+    def __init__(self, game_code = 2, min_players = 7, max_players = 21):
+        super(Mafia, self).__init__(game_code, min_players, max_players)
+
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
+                        types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+
+        self.message_for_group = ["You have selected the game mafia\nTo play mafia we need 7 to 21 people", markup]
+        
+    
+    def setup_game(self):
+        pass
+        
+        
+    def setup_round(self):
+        pass

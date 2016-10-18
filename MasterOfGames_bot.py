@@ -121,6 +121,18 @@ def callback_resistance(call):
                           message_id=call.message.message_id, 
                           chat_id=key, 
                           reply_markup=games[key].message_for_group[1])
+                          
+                          
+#handles the callback from the inline keyboard in the new_game function 
+@bot.callback_query_handler(func=lambda call: call.message.chat.id not in games and call.data == "mafia")
+def callback_mafia(call):
+    key = call.message.chat.id
+    games[key] = Mafia()
+    
+    bot.edit_message_text(games[key].message_for_group[0], 
+                          message_id=call.message.message_id, 
+                          chat_id=key, 
+                          reply_markup=games[key].message_for_group[1])
 
     
 #built so it should be able to handle the join callback from more then one game
@@ -174,8 +186,8 @@ def callback_start(call):
             if talk_to_everyone:
                 games[key].setup_game()
                 bot.send_message(key, games[key].message_for_group[0])
-                
                 message_players(key)
+                
                 games[key].setup_round()
                 bot.send_message(key, games[key].message_for_group[0])
                 
