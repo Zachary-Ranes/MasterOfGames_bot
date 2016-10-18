@@ -9,6 +9,7 @@ from random import shuffle
 
 class Game(object):
     
+    #
     def __init__(self, game_code = None, min_players = None, max_players = None):
         #
         self.game_code = game_code
@@ -23,7 +24,7 @@ class Game(object):
         
         #
         self.ids_of_players = []
-        self.number_of_players = None
+        self.number_of_players = 0
         
         #
         self.players_id_to_username = {}
@@ -96,7 +97,7 @@ class Game(object):
         
 class Resistance(Game):
 
-    def __init__(self, game_code = 1, min_players = 3, max_players = 10):
+    def __init__(self, game_code = 1, min_players = 5, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
    
         markup = types.InlineKeyboardMarkup()
@@ -169,6 +170,7 @@ class Resistance(Game):
                 self.ids_of_resistances.append(player_id)
                 
         self.message_for_group[0] = "The game of Resistance has started! \nThere are "+ str(self.number_of_spies) +" spies in the game."
+        self.message_for_group[1] = None
         
         for player_id in self.ids_of_resistances:
             self.message_for_players[player_id] = ("You are part of the Resistance\nYou win when 3 missions succeed", None)
@@ -205,7 +207,8 @@ class Resistance(Game):
                                  +" gets to nominate "+ str(self.number_of_nominees) 
                                  +" players to go on the mission\n"+ extra_message
                                  +"Nominate players by typing /nominate (space) @username (space) @username ...etc")
-        
+        self.message_for_group[1] = None
+        self.message_for_players = {}
     
     
     #
@@ -292,6 +295,7 @@ class Resistance(Game):
         self.ids_of_players_voted_from_mission = []
 
         self.message_for_group[0] = "Enough yea votes have been cast,"+ self.list_usernames(None, self.ids_of_players_going_on_mission) +" are now going on a mission"
+        self.message_for_group[1] = None
         
         #these two markups add the group chats Id (key) to there callback data so the callback can be associated to the group chat
         markup_resistance = types.InlineKeyboardMarkup()
@@ -343,6 +347,7 @@ class Resistance(Game):
 
 class Mafia(Game):
     
+    #
     def __init__(self, game_code = 2, min_players = 7, max_players = 21):
         super(Mafia, self).__init__(game_code, min_players, max_players)
 
@@ -352,10 +357,35 @@ class Mafia(Game):
 
         self.message_for_group = ["You have selected the game mafia\nTo play mafia we need 7 to 21 people", markup]
         
-    
+        """
+        game_state is set to 0 in the parent class contructor
+        
+        game_state = 0 : game has not start (players can still join)
+        game_state = 1 : the game has started (players cant hit join)
+
+
+        game_state = -1 = game is paused (waiting for the game to be ended or continued)
+        """
+
+        self.ids_of_innocents = []
+        self.ids_of_mafiosi = []
+        self.number_of_mafiosi = 0
+        
+        self.id_of_detective = None
+        self.id_of_doctor = None
+
+
+    #
     def setup_game(self):
-        pass
-        
-        
+
+
+
+        shuffle(self.ids_of_players)
+
+
+        self.game_state = 2
+     
+
+    #   
     def setup_round(self):
         pass

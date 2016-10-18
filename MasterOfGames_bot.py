@@ -164,10 +164,8 @@ def callback_start(call):
                                       message_id=call.message.message_id, 
                                       chat_id=key, 
                                       reply_markup=games[key].message_for_group[1]) 
-                return
-                
             except:
-                return
+                pass
                 
         if games[key].game_state == 1:
             talk_to_everyone = True
@@ -175,7 +173,7 @@ def callback_start(call):
             for i in range(games[key].number_of_players):
                 player_id = games[key].ids_of_players[i]
                 try:
-                    bot.send_message(player_id, "Getting things ready")
+                    bot.send_message(player_id, "You are part of a group game, don't stop playing mid way please")
                 except:
                     bot.send_message(key, "I can not talk to @"+ games[key].players_id_to_username[player_id]
                                         +"\nPlease start a private chat with me, we can not play the game if you do not do so")
@@ -185,24 +183,26 @@ def callback_start(call):
             #If the bot can not talk to everyone the game can not start        
             if talk_to_everyone:
                 games[key].setup_game()
-                bot.send_message(key, games[key].message_for_group[0])
                 message_players(key)
                 
                 games[key].setup_round()
-                bot.send_message(key, games[key].message_for_group[0])
+                message_players(key)
                 
    
 #
 def message_players(key):
+    if games[key].message_for_group[0] != None:
+        bot.send_message(key, games[key].message_for_group[0], reply_markup=games[key].message_for_group[1])
+
     for player_id in games[key].message_for_players:
         try:
             bot.send_message(player_id, games[key].message_for_players[player_id][0], reply_markup=games[key].message_for_players[player_id][1])
         except:
-            #may want to put stuff here about someone leaving the game / blocking the bot mid game
-            pass
+            bot.send_message(key, "Someone has blocked me mid way through the game, I am sorry the game can not continue GAME ENDED")
+            del games[key]
        
     
-#handles the nominate command for resistance, nominate_logic can't just be passed message becouse it losses text when passing or atleast apears to 
+#handles the nominate command for resistance, nominate_logic can't just be passed message because it losses text when passing or at least appears to 
 @bot.message_handler(commands=['nominate'])
 def game1_command_nominate(message):
     key = message.chat.id
@@ -235,11 +235,10 @@ def game1_callback_yea_or_nay(call):
         if games[key].game_state == 2:
             bot.send_message(key, "Enough nay votes have been casted, mission will not be preformed")
             games[key].setup_round()
-            bot.send_message(key, games[key].message_for_group[0])
+            message_players(key)
             
         if games[key].game_state == 4:
             games[key].setup_mission(key)
-            bot.send_message(key, games[key].message_for_group[0])
             message_players(key)
                 
             
@@ -268,7 +267,7 @@ def game1_callback_pass_or_fail(call):
                 del games[key] 
             else:
                 games[key].setup_round()
-                bot.send_message(key, games[key].message_for_group[0])
+                message_players(key)
 
     
 bot.polling()
