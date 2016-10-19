@@ -86,10 +86,10 @@ class Game(object):
             
         
     #
-    def list_usernames(self, exclude_id, list_of_player_ids):
+    def list_usernames(self, list_of_excluded_id, list_of_player_ids):
         output = ""
         for player_id in list_of_player_ids:
-            if player_id != exclude_id:
+            if player_id not in list_of_excluded_id:
                 output += " @" + self.players_id_to_username[player_id]
         return output
     
@@ -119,7 +119,7 @@ class Resistance(Game):
                                     self.EIGHT_PLUS_PLAYERS]
         
         """
-        game_state is set to 0 in the parent class contructor
+        game_state is set to 0 in the parent class constructor
         
         game_state = 0 : game has not start (players can still join)
         game_state = 1 : the game has started (players cant hit join)
@@ -176,7 +176,7 @@ class Resistance(Game):
             self.message_for_players[player_id] = ("You are part of the Resistance\nYou win when 3 missions succeed", None)
             
         for player_id in self.ids_of_spies:
-            self.message_for_players[player_id] = ("You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames(player_id, self.ids_of_spies), None)
+            self.message_for_players[player_id] = ("You are a Spy\n You win when 3 missions fail\nThe other spies are:" + self.list_usernames([player_id], self.ids_of_spies), None)
 
         #shuffled again so turn order does not give away roles
         shuffle(self.ids_of_players)
@@ -197,7 +197,7 @@ class Resistance(Game):
         #This if else is for the rule that some missions in the game will need two fail votes to fail
         if self.game_round == 3 and self.number_of_players >= 7:
             self.two_fail_mission = True
-            extra_message = "This round requries two spys to vote for failure to fail\n"
+            extra_message = "This round requires two spies to vote for failure to fail\n"
         else:
             self.two_fail_mission = False
             extra_message = ""
@@ -309,9 +309,9 @@ class Resistance(Game):
 
         for player_id in self.ids_of_players_going_on_mission:
             if player_id in self.ids_of_resistances:
-                self.message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(player_id, self.ids_of_players_going_on_mission), markup_resistance)
+                self.message_for_players[player_id] = ("You are on a mission with" + self.list_usernames([player_id], self.ids_of_players_going_on_mission), markup_resistance)
             if player_id in self.ids_of_spies:
-                self.message_for_players[player_id] = ("You are on a mission with" + self.list_usernames(player_id, self.ids_of_players_going_on_mission), markup_spies)
+                self.message_for_players[player_id] = ("You are on a mission with" + self.list_usernames([player_id], self.ids_of_players_going_on_mission), markup_spies)
                 
     
     #takes self, players id and string that is there vote on whether the mission passes or not
@@ -348,7 +348,7 @@ class Resistance(Game):
 class Mafia(Game):
     
     #
-    def __init__(self, game_code = 2, min_players = 7, max_players = 21):
+    def __init__(self, game_code = 2, min_players = 7, max_players = 24):
         super(Mafia, self).__init__(game_code, min_players, max_players)
 
         markup = types.InlineKeyboardMarkup()
@@ -358,10 +358,12 @@ class Mafia(Game):
         self.message_for_group = ["You have selected the game mafia\nTo play mafia we need 7 to 21 people", markup]
         
         """
-        game_state is set to 0 in the parent class contructor
+        game_state is set to 0 in the parent class constructor
         
         game_state = 0 : game has not start (players can still join)
         game_state = 1 : the game has started (players cant hit join)
+        game_state = 2 : night time waiting for all night actors to vote
+        game_state = 3 : 
 
 
         game_state = -1 = game is paused (waiting for the game to be ended or continued)
@@ -377,15 +379,96 @@ class Mafia(Game):
 
     #
     def setup_game(self):
-
-
+        self.number_of_mafiosi = int(round(self.number_of_players/3))
 
         shuffle(self.ids_of_players)
+        
+        for i in range(self.number_of_mafiosi):
+            self.number_of_mafiosi.append(self.ids_of_players[i])
+        
+        self.id_of_detective = self.ids_of_players[self.number_of_mafiosi]
+        self.id_of_doctor = self.ids_of_players[self.number_of_mafiosi+1]
 
+        for player_id in self.ids_of_players:
+            if player_id not in self.number_of_mafiosi:
+                self.ids_of_innocents.append(player_id)
+                
+        self.message_for_group[0] = "The game of Mafia has started! \nThere are "+ str(self.number_of_mafiosi) +" mafiosi in the game."
+        self.message_for_group[1] = None
 
+        for player_id in self.ids_of_innocents:
+            self.message_for_players[player_id] = ("You are Innocent\nYou win when all the mafia are lynched", None)
+            
+        for player_id in self.ids_of_mafiosi:
+            self.message_for_players[player_id] = ("You are a member of the Mafia\nYou win when the mafia kill off all the innocents\nThe other mafiosi are:" 
+                                                    + self.list_usernames([player_id], self.ids_of_mafiosi), None)
+
+        self.message_for_players[self.id_of_detective] = ("You are the Detective\nYou win when all the mafia are lynched\nYou can to learn the role of another play every night", None)
+        self.message_for_players[self.id_of_doctor] = ("You are the Doctor\nYou win when all the mafia are lynched\nYou can choose a player every night to keep alive", None)
+
+        shuffle(self.ids_of_players)
         self.game_state = 2
-     
+        
 
     #   
     def setup_round(self):
+        self.message_for_group[0] = "The night has started, the mafia are plotting to kill someone"
+        self.message_for_group[1] = None
+                        
+        self.message_for_players = {}
+
+        markup_mafia = types.InlineKeyboardMarkup()
+        for i in range(len(self.ids_of_innocents)):
+            player_id = self.ids_of_innocents[i]
+            player_id_index = str(i)
+            if len(i) == 1:  
+                player_id_index = "0" + player_id_index
+            markup_mafia.row(types.InlineKeyboardButton(callback_data="kill"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
+
+        markup_doctor = types.InlineKeyboardMarkup()
+        markup_detective = types.InlineKeyboardMarkup()
+        for i in range(len(self.ids_of_players)):
+            player_id = self.ids_of_players[i]
+            player_id_index = str(i)
+            if len(i) == 1:  
+                player_id_index = "0" + player_id_index
+            markup_doctor.row(types.InlineKeyboardButton(callback_data="heal"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
+            markup_detective.row(types.InlineKeyboardButton(callback_data="look"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
+
+
+        for player_id in self.ids_of_mafiosi:
+            self.message_for_players[player_id] = ("Who do you want to kill? Once all the mafia wants to kill the same person that person will be killed", markup_mafia)
+
+        self.message_for_players[id_of_doctor] = ("Who do you want to heal?", markup_doctor)
+
+        self.message_for_players[id_of_detective] = ("Who do you want to check the role of?", markup_detective)
+
+
+    #
+    def kill_vote_logic():
+        pass
+
+
+    #
+    def doctor_logic():
+        pass
+
+
+    #
+    def detective_logic():
+        pass
+
+
+    #
+    def night_logic():
+        pass
+        
+
+    #
+    def lynch_vote_logic();
+        pass
+
+
+    #
+    def day_logic();
         pass

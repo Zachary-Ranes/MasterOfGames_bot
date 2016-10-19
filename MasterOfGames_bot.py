@@ -47,12 +47,14 @@ def command_help(message):
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_resistance'])
 def command_rules_resistance(message):
+    #still need to write the rules
     pass
 
 
 #output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_mafia'])
 def command_rules_mafia(message):
+    #still need to write the rules
     pass
 
 
@@ -158,7 +160,7 @@ def callback_start(call):
         games[key].enough_players()
     
         if games[key].game_state == 0:
-            #this try is here because if the bot trys to edit the message and there is no change it will crash the bot
+            #this try is here because if the bot tries to edit the message and there is no change it will crash the bot
             try:
                 bot.edit_message_text(games[key].message_for_group[0], 
                                       message_id=call.message.message_id, 
@@ -269,5 +271,28 @@ def game1_callback_pass_or_fail(call):
                 games[key].setup_round()
                 message_players(key)
 
+   
+#
+@bot.callback_query_handler(lambda call: call.data[0:4] == "kill" and int(call.data[6:] in games))
+def game2_callback_kill(call):
+    key = int(call.data[6:])
+    player_id_index = int(call.data[4:6])
     
+
+#
+@bot.callback_query_handler(lambda call: call.data[0:4] == "heal" and int(call.data[6:] in games))
+def game2_callback_heal(call):
+    key = int(call.data[6:])
+    player_id_index = int(call.data[4:6])
+    
+
+#
+@bot.callback_query_handler(lambda call: call.data[0:4] == "look" and int(call.data[6:] in games))
+def game2_callback_look(call):
+    key = int(call.data[6:])
+    player_id_index = int(call.data[4:6])
+
+
+
+
 bot.polling()
