@@ -33,6 +33,7 @@ class Game(object):
         #
         self.message_for_group = []
         self.message_for_players = {}
+        self.last_messages = {}
     
         
     #takes a telegram users chat ID,  username and first name

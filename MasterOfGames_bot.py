@@ -207,7 +207,8 @@ def message_players(key):
 
     for player_id in games[key].message_for_players:
         try:
-            bot.send_message(player_id, games[key].message_for_players[player_id][0], reply_markup=games[key].message_for_players[player_id][1])
+            m = bot.send_message(player_id, games[key].message_for_players[player_id][0], reply_markup=games[key].message_for_players[player_id][1])
+            games[key].last_messages[player_id] = m
         except:
             bot.send_message(key, "Someone has blocked me mid way through the game, I am sorry the game can not continue GAME ENDED")
             del games[key]
@@ -278,14 +279,23 @@ def game1_callback_pass_or_fail(call):
 def game2_callback_kill(call):
     key = int(call.data[6:])
     player_id_index = int(call.data[4:6])
-    player_id = games[key].ids_of_players[player_id_index]
+    kill_id = games[key].ids_of_players[player_id_index]
 
     if (games[key].game_state == 2
     and call.from_user.id in games[key].ids_of_players
-    and player_id in games[key].ids_of_players
+    and kill_id in games[key].ids_of_players
+    and call.from_user.id in games[key].ids_of_mafiosi
     and games[key].role_completed_mafia == False):
         
-        pass        
+        kill_vote_logic(kill_id)        
+        for player_id in games[key].ids_of_mafiosi:
+            try:
+                bot.edit_message_text(games[key].message_for_players[player_id][0], 
+                                      message_id=games[key].last_messages[player_id].message_id, 
+                                      chat_id=player_id1, 
+                                      reply_markup=games[key].message_for_players[player_id][1])
+            except:
+                pass
 
     if games[key].night_over:
         player_game(key)
@@ -301,6 +311,7 @@ def game2_callback_heal(call):
     if (games[key].game_state == 2
     and player_id in games[key].ids_of_players
     and call.from_user.id in games[key].ids_of_players
+    and call.from_user.id == games[key].id_of_doctor 
     and games[key].role_completed_doctor == False):
         
         output_message = games[key].doctor_logic(player_id)
@@ -320,6 +331,7 @@ def game2_callback_look(call):
     if (games[key].game_state == 2
     and player_id in games[key].ids_of_players
     and call.from_user.id in games[key].ids_of_players
+    and call.from_user.id == games[key].id_of_detective
     and games[key].role_completed_detective == False):
         
         roll_info = games[key].detective_logic(player_id)
@@ -346,6 +358,25 @@ def game2_callback_hang(call):
         if game_state == 4:
             message_players(key)
     
+
+#
+@bot.callback_query_handler(lambda call: call.data[0:4] == "vote" and int(call.data[6:] in games))
+def game2_callback_vote(call):
+    key = int(call.data[6:])
+    player_id_index = int(call.data[4:6])
+    player_id = games[key].ids_of_players[player_id_index]
+
+    if (games[key].game_state == 4
+    and player_id in games[key].ids_of_players
+    and call.from_user.id in games[key].ids_of_players):
+
+        games[key].lynch_vote_logic(player_id)
+
+        if games[key].game_state != 4:
+            message_players(key)
+
+            if games[key].game_state == 2:
+                play_game(key)
 
 
 
