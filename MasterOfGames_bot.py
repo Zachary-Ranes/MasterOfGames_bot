@@ -141,13 +141,13 @@ def callback_mafia(call):
 @bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data == "join")
 def callback_join(call):
     key = call.message.chat.id
-    
-    if games[key].game_state == 0:    
-        output_message = games[key].add_player(call.from_user.id, call.from_user.username, call.from_user.first_name)
-        
-        #add_player will return None if the player has already join the game 
-        if output_message != None:
-            bot.send_message(key, output_message)
+    player_id = call.from_user.id
+
+    if (games[key].game_state == 0 
+    and player_id not in games[key].ids_of_players):    
+
+        output_message = games[key].add_player(player_id, call.from_user.username, call.from_user.first_name)
+        bot.send_message(key, output_message)
                 
 
 #built so it should be able to handle the start callback from more then one game
@@ -186,10 +186,19 @@ def callback_start(call):
             if talk_to_everyone:
                 games[key].setup_game()
                 message_players(key)
+                play_game(key)
                 
-                games[key].setup_round()
-                message_players(key)
-                
+
+#
+def play_game(key):
+    games[key].check_for_winner()
+    if games[key].game_state == -2:
+        bot.send_message(key, games[key].message_for_group[0])
+        del games[key] 
+    else:
+        games[key].setup_round()
+        message_players(key)
+
    
 #
 def message_players(key):
@@ -231,8 +240,8 @@ def game1_callback_yea_or_nay(call):
     and player_id in games[key].ids_of_players 
     and player_id not in games[key].ids_of_players_voted_on_nominees):
     
-        games[key].vote_logic(player_id, call.data)
-        bot.send_message(key, games[key].message_for_group[0])
+        output_message = games[key].vote_logic(player_id, call.data)
+        bot.send_message(key, output_message)
 
         if games[key].game_state == 2:
             bot.send_message(key, "Enough nay votes have been casted, mission will not be preformed")
@@ -262,36 +271,81 @@ def game1_callback_pass_or_fail(call):
         
         if games[key].game_state != 4:
             bot.send_message(key, games[key].message_for_group[0])
-            
-            games[key].check_for_winner()
-            if games[key].game_state == 5:
-                bot.send_message(key, games[key].message_for_group[0])
-                del games[key] 
-            else:
-                games[key].setup_round()
-                message_players(key)
-
+            play_game(key)
    
 #
 @bot.callback_query_handler(lambda call: call.data[0:4] == "kill" and int(call.data[6:] in games))
 def game2_callback_kill(call):
     key = int(call.data[6:])
     player_id_index = int(call.data[4:6])
-    
+    player_id = games[key].ids_of_players[player_id_index]
+
+    if (games[key].game_state == 2
+    and call.from_user.id in games[key].ids_of_players
+    and player_id in games[key].ids_of_players
+    and games[key].role_completed_mafia == False):
+        
+        pass        
+
+    if games[key].night_over:
+        player_game(key)
+
 
 #
 @bot.callback_query_handler(lambda call: call.data[0:4] == "heal" and int(call.data[6:] in games))
 def game2_callback_heal(call):
     key = int(call.data[6:])
     player_id_index = int(call.data[4:6])
-    
+    player_id = games[key].ids_of_players[player_id_index]
+
+    if (games[key].game_state == 2
+    and player_id in games[key].ids_of_players
+    and call.from_user.id in games[key].ids_of_players
+    and games[key].role_completed_doctor == False):
+        
+        output_message = games[key].doctor_logic(player_id)
+        bot.send_message(call.from_user.id, output_message)
+
+    if games[key].night_over:
+        player_game(key)
+
 
 #
 @bot.callback_query_handler(lambda call: call.data[0:4] == "look" and int(call.data[6:] in games))
 def game2_callback_look(call):
     key = int(call.data[6:])
     player_id_index = int(call.data[4:6])
+    player_id = games[key].ids_of_players[player_id_index]
 
+    if (games[key].game_state == 2
+    and player_id in games[key].ids_of_players
+    and call.from_user.id in games[key].ids_of_players
+    and games[key].role_completed_detective == False):
+        
+        roll_info = games[key].detective_logic(player_id)
+        bot.send_message(call.from_user.id, roll_info)
+
+    if games[key].night_over:
+        player_game(key)
+
+
+#
+@bot.callback_query_handler(lambda call: call.data[0:4] == "hang" and int(call.data[6:] in games))
+def game2_callback_hang(call):
+    key = int(call.data[6:])
+    player_id_index = int(call.data[4:6])
+    player_id = games[key].ids_of_players[player_id_index]
+
+    if (games[key].game_state == 3
+    and player_id in games[key].ids_of_players
+    and call.from_user.id in games[key].ids_of_players):
+
+        output_message = games[key].lych_nominate_logic(player_id)
+        bot.send_message(key, output_message)
+
+        if game_state == 4:
+            message_players(key)
+    
 
 
 

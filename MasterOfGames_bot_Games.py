@@ -44,14 +44,11 @@ class Game(object):
         if len(self.ids_of_players) == self.MAX_PLAYERS:
             return "I am sorry @"+ player_username +" but we already have the max number of player for this game"
        
-        if player_id not in self.ids_of_players: 
+        else: 
             self.ids_of_players.append(player_id)
             self.players_id_to_username[player_id] = player_username
             self.players_username_to_id[player_username] = player_id
             return "@"+ player_username +" has joined the game"
-        
-        else:
-            return None
     
     
     #
@@ -74,6 +71,10 @@ class Game(object):
     def setup_round(self):
         pass
               
+
+    #
+    def check_for_winner(self):
+        pass
             
     #
     def pause_game(self, value):
@@ -126,7 +127,7 @@ class Resistance(Game):
         game_state = 2 : looking for nominees for a mission
         game_state = 3 : looking for votes on nominees for mission
         game_state = 4 : voting over, players going on mission
-        game_state = 5 : game has ending one team has scored 3 points
+        game_state = -2 : game has ending one team has scored 3 points
         game_state = -1 = game is paused (waiting for the game to be ended or continued)
         """
         self.game_round = 0
@@ -211,14 +212,15 @@ class Resistance(Game):
         self.message_for_players = {}
     
     
-    #
+    #takes self
+    #changes games state to 5 and changes group message if there is a winner
     def check_for_winner(self):
         if self.points_resistance == 3:
-            self.game_state = 5
+            self.game_state = -2
             self.message_for_group[0] = "The resistance has scored 3 points!!!\nThe resistance has won the game"
             
         if self.points_spies == 3:
-            self.game_state = 5
+            self.game_state = -2
             self.message_for_group[0] = "The spies have scored 3 points!!!\nThe spies have won the game"
 
                
@@ -282,9 +284,8 @@ class Resistance(Game):
             if self.mission_nay_votes >= self.number_of_players/2:
                 self.game_state = 2
 
-        self.message_for_group[0] = "@"+ self.players_id_to_username[player_id] +" has voted "+ vote
         self.ids_of_players_voted_on_nominees.append(player_id)
-
+        return "@"+ self.players_id_to_username[player_id] +" has voted "+ vote
         
   
     #takes self
@@ -363,18 +364,24 @@ class Mafia(Game):
         game_state = 0 : game has not start (players can still join)
         game_state = 1 : the game has started (players cant hit join)
         game_state = 2 : night time waiting for all night actors to vote
-        game_state = 3 : 
+        game_state = 3 : day time looking for nominees to lynch
+        game_state = 4 : day time, voting on who to lynch
 
-
-        game_state = -1 = game is paused (waiting for the game to be ended or continued)
+        game_state - -2 : game is over about to be deleted 
+        game_state = -1 : game is paused (waiting for the game to be ended or continued)
         """
 
         self.ids_of_innocents = []
         self.ids_of_mafiosi = []
         self.number_of_mafiosi = 0
+        self.role_completed_mafia = False
         
         self.id_of_detective = None
+        self.role_completed_detective = False
+
         self.id_of_doctor = None
+        self.role_completed_doctor = False
+        self.id_of_saved_player = None
 
 
     #
@@ -412,11 +419,19 @@ class Mafia(Game):
 
     #   
     def setup_round(self):
-        self.message_for_group[0] = "The night has started, the mafia are plotting to kill someone"
-        self.message_for_group[1] = None
-                        
         self.message_for_players = {}
 
+        if self.game_state == 2:
+            setup_night()
+        if self.game_state == 3:
+            setup_day()
+
+
+    #
+    def setup_night(self):
+        self.message_for_group[0] = "The night has started, the mafia are plotting to kill someone"
+        self.message_for_group[1] = None
+                       
         markup_mafia = types.InlineKeyboardMarkup()
         for i in range(len(self.ids_of_innocents)):
             player_id = self.ids_of_innocents[i]
@@ -430,6 +445,7 @@ class Mafia(Game):
         for i in range(len(self.ids_of_players)):
             player_id = self.ids_of_players[i]
             player_id_index = str(i)
+            #the code that chops up the callback data looks for two spaces
             if len(i) == 1:  
                 player_id_index = "0" + player_id_index
             markup_doctor.row(types.InlineKeyboardButton(callback_data="heal"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
@@ -445,30 +461,58 @@ class Mafia(Game):
 
 
     #
-    def kill_vote_logic():
+    def setup_day(self):
         pass
 
 
     #
-    def doctor_logic():
+    def kill_vote_logic(self, id_of_player_voted_to_be_killed):
         pass
 
 
     #
-    def detective_logic():
+    def doctor_logic(self, id_of_player_to_save):
+        self.role_completed_doctor = True
+
+        self.id_of_saved_player = id_of_player_to_save
+        return "@"+ self.players_id_to_username[id_of_player_to_save] +" will be saved"
+
+
+    #
+    def detective_logic(self, id_of_player_to_search):
+        self.role_completed_detective = True
+
+        if id_of_player_to_search in self.ids_of_innocents:
+            if id_of_player_to_search == self.id_of_doctor:
+                return "@"+ self.players_id_to_username[id_of_player_to_search] +" is the doctor."
+            else:
+                return "@"+ self.players_id_to_username[id_of_player_to_search] +" is an innocent towns person."
+        if id_of_player_to_search in self.ids_of_mafiosi:
+            return "@"+ self.players_id_to_username[id_of_player_to_search] +" is part of the mafia."
+
+
+    #
+    def night_over(self):
+        if (self.role_completed_mafia 
+        and self.role_completed_detective
+        and self.role_completed_doctor):
+            self.game_state = 3
+            return True
+        else:
+            return False
+
+
+    #
+    def lych_nominate_logic(self, id_of_player_nominated_to_be_lyched):
+        return
+
+
+    #
+    def lynch_vote_logic(self, id_of_player_voted_to_be_lyched):
         pass
 
 
     #
-    def night_logic():
-        pass
-        
-
-    #
-    def lynch_vote_logic();
+    def check_for_winner(self):
         pass
 
-
-    #
-    def day_logic();
-        pass
