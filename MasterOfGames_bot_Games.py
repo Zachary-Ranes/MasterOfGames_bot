@@ -376,7 +376,8 @@ class Mafia(Game):
         self.ids_of_mafiosi = []
         self.number_of_mafiosi = 0
         self.role_completed_mafia = False
-        
+        self.ids_of_mafia_targets = {}
+
         self.id_of_detective = None
         self.role_completed_detective = False
 
@@ -437,6 +438,7 @@ class Mafia(Game):
         for i in range(len(self.ids_of_innocents)):
             player_id = self.ids_of_innocents[i]
             player_id_index = str(i)
+            #the code that chops up the callback data looks for two spaces
             if len(i) == 1:  
                 player_id_index = "0" + player_id_index
             markup_mafia.row(types.InlineKeyboardButton(callback_data="kill"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
@@ -452,6 +454,7 @@ class Mafia(Game):
             markup_doctor.row(types.InlineKeyboardButton(callback_data="heal"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
             markup_detective.row(types.InlineKeyboardButton(callback_data="look"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]))
 
+        self.ids_of_mafia_targets = {}
 
         for player_id in self.ids_of_mafiosi:
             self.message_for_players[player_id] = ("Who do you want to kill? Once all the mafia wants to kill the same person that person will be killed", markup_mafia)
@@ -462,13 +465,31 @@ class Mafia(Game):
 
 
     #
-    def setup_day(self):
-        pass
+    def kill_vote_logic(self, mafia_id, id_of_player_voted_to_be_killed):
+        self.ids_of_mafia_targets[mafia_id] = id_of_player_voted_to_be_killed
 
+        markup_mafia = types.InlineKeyboardMarkup()
+        
+        for i in range(len(self.ids_of_innocents)):
+            player_id = self.ids_of_innocents[i]
+            
+            player_id_index = str(i)
+            if len(i) == 1:  
+                player_id_index = "0" + player_id_index
 
-    #
-    def kill_vote_logic(self, id_of_player_voted_to_be_killed):
-        pass
+            votes_for = ""
+            for mafia_id in self.ids_of_mafia_targets:
+                if self.ids_of_mafia_targets[mafia_id] == player_id:
+                    votes_for += "+"
+
+            markup_mafia.row(types.InlineKeyboardButton(callback_data="kill"+ str(player_id_index) +str(key), text="@"+self.players_id_to_username[player_id]+votes_for))
+
+            if self.ids_of_mafia_targets.count(player_id) == self.number_of_mafiosi:
+                if all(value == player_id for value in self.ids_of_mafia_targets.values()):
+                    self.role_completed_mafia == True 
+                
+        for player_id in self.ids_of_mafiosi:
+            self.message_for_players[player_id][1] = markup_mafia
 
 
     #
@@ -501,6 +522,30 @@ class Mafia(Game):
             return True
         else:
             return False
+
+
+    #
+    def setup_day(self):
+        id_of_victim = self.ids_of_mafia_targets.value()[0]
+
+        victim_kill = id_of_victim != self.id_of_saved_player
+
+        if victim_kill:
+            self.message_for_group[0] = ""        
+            
+            self.ids_of_players.remove(id_of_victim)
+            self.ids_of_innocents.remove(id_of_victim)
+            self.number_of_players -= 1
+
+        else:
+            self.message_for_group[0] = ""
+
+
+        markup_day = types.InlineKeyboardMarkup()
+        for player_id in self.ids_of_players:
+            markup_day.row(types.InlineKeyboardButton(callback_data="hang"+ str(player_id), text="@"+self.players_id_to_username[player_id]))
+
+        self.message_for_group[1] = markup_day
 
 
     #

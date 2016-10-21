@@ -274,6 +274,7 @@ def game1_callback_pass_or_fail(call):
             bot.send_message(key, games[key].message_for_group[0])
             play_game(key)
    
+
 #
 @bot.callback_query_handler(lambda call: call.data[0:4] == "kill" and int(call.data[6:] in games))
 def game2_callback_kill(call):
@@ -287,12 +288,12 @@ def game2_callback_kill(call):
     and call.from_user.id in games[key].ids_of_mafiosi
     and games[key].role_completed_mafia == False):
         
-        kill_vote_logic(kill_id)        
+        kill_vote_logic(call.from_user.id, kill_id)        
         for player_id in games[key].ids_of_mafiosi:
             try:
                 bot.edit_message_text(games[key].message_for_players[player_id][0], 
                                       message_id=games[key].last_messages[player_id].message_id, 
-                                      chat_id=player_id1, 
+                                      chat_id=player_id, 
                                       reply_markup=games[key].message_for_players[player_id][1])
             except:
                 pass
@@ -342,11 +343,10 @@ def game2_callback_look(call):
 
 
 #
-@bot.callback_query_handler(lambda call: call.data[0:4] == "hang" and int(call.data[6:] in games))
+@bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data[0:4] == "hang")
 def game2_callback_hang(call):
-    key = int(call.data[6:])
-    player_id_index = int(call.data[4:6])
-    player_id = games[key].ids_of_players[player_id_index]
+    key = call.message.chat.id
+    player_id = call.data[4:0]
 
     if (games[key].game_state == 3
     and player_id in games[key].ids_of_players
