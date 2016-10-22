@@ -365,8 +365,7 @@ class Mafia(Game):
         game_state = 0 : game has not start (players can still join)
         game_state = 1 : the game has started (players cant hit join)
         game_state = 2 : night time waiting for all night actors to vote
-        game_state = 3 : day time looking for nominees to lynch
-        game_state = 4 : day time, voting on who to lynch
+        game_state = 3 : day time looking for who to lynch
 
         game_state - -2 : game is over about to be deleted 
         game_state = -1 : game is paused (waiting for the game to be ended or continued)
@@ -384,6 +383,8 @@ class Mafia(Game):
         self.id_of_doctor = None
         self.role_completed_doctor = False
         self.id_of_saved_player = None
+
+        self.ids_of_lych_targets = {}
 
 
     #
@@ -496,8 +497,12 @@ class Mafia(Game):
     def doctor_logic(self, id_of_player_to_save):
         self.role_completed_doctor = True
 
-        self.id_of_saved_player = id_of_player_to_save
-        return "@"+ self.players_id_to_username[id_of_player_to_save] +" will be saved"
+        if self.id_of_saved_player != id_of_player_to_save:
+            self.id_of_saved_player = id_of_player_to_save
+            return "@"+ self.players_id_to_username[id_of_player_to_save] +" will be saved"
+        else:
+            self.role_completed_doctor = False
+            return "You can not safe the same person two time is a row"
 
 
     #
@@ -531,31 +536,33 @@ class Mafia(Game):
         victim_kill = id_of_victim != self.id_of_saved_player
 
         if victim_kill:
-            self.message_for_group[0] = ""        
+            self.message_for_group[0] = ("During the night @" + self.players_id_to_username[id_of_victim] + " was killed by the mafia\n\nIt is now the day, who should be lynched?"
+            							+"\nIf half or more of the players are voting for someone they will be lyched")       
             
             self.ids_of_players.remove(id_of_victim)
             self.ids_of_innocents.remove(id_of_victim)
             self.number_of_players -= 1
 
         else:
-            self.message_for_group[0] = ""
-
+            self.message_for_group[0] = ("During the night @" + self.players_id_to_username[id_of_victim] 
+                                       + " was attacked by the mafia, luckily the doctor also visited that night and saved a life"
+                                       + "\n\nIt is now the day, who should be lynched?\nIf half or more of the players are voting for someone they will be lyched")
 
         markup_day = types.InlineKeyboardMarkup()
         for player_id in self.ids_of_players:
-            markup_day.row(types.InlineKeyboardButton(callback_data="hang"+ str(player_id), text="@"+self.players_id_to_username[player_id]))
+            markup_day.row(types.InlineKeyboardButton(callback_data="lych"+ str(player_id), text="@"+self.players_id_to_username[player_id]))
 
         self.message_for_group[1] = markup_day
 
-
-    #
-    def lych_nominate_logic(self, id_of_player_nominated_to_be_lyched):
-        return
+        self.ids_of_lych_targets = {}
 
 
-    #
-    def lynch_vote_logic(self, id_of_player_voted_to_be_lyched):
-        pass
+    # 
+    def lych_logic(self, player_id, id_of_player_to_be_lyched):
+    	self.ids_of_lych_targets[player_id] = id_of_player_to_be_lyched
+    	
+
+    	return
 
 
     #

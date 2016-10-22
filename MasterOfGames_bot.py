@@ -343,41 +343,29 @@ def game2_callback_look(call):
 
 
 #
-@bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data[0:4] == "hang")
-def game2_callback_hang(call):
+@bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data[0:4] == "lych")
+def game2_callback_lych(call):
     key = call.message.chat.id
-    player_id = call.data[4:0]
+    lych_target_id = call.data[4:0]
+    player_id = call.from_user.id
 
     if (games[key].game_state == 3
-    and player_id in games[key].ids_of_players
+    and lych_target_id in games[key].ids_of_players
     and call.from_user.id in games[key].ids_of_players):
 
-        output_message = games[key].lych_nominate_logic(player_id)
-        bot.send_message(key, output_message)
+        id_of_lych_target = games[key].lych_logic(player_id, lych_target_id)
+        try:
+            bot.edit_message_text(games[key].message_for_group[0],
+                                  message_id=call.message.message_id,
+                                  chat_id=call.message.chat.id,
+                                  reply_markup=games[key].message_for_group[1])
+        except:
+            pass
 
-        if game_state == 4:
-            message_players(key)
+        if id_of_lych_target:
+            bot.send_message(key, "@"+ games[key].players_id_to_username[id_of_lych_target] +" has been lyched, this dark day is done.")
+            play_game(key)
     
-
-#
-@bot.callback_query_handler(lambda call: call.data[0:4] == "vote" and int(call.data[6:] in games))
-def game2_callback_vote(call):
-    key = int(call.data[6:])
-    player_id_index = int(call.data[4:6])
-    player_id = games[key].ids_of_players[player_id_index]
-
-    if (games[key].game_state == 4
-    and player_id in games[key].ids_of_players
-    and call.from_user.id in games[key].ids_of_players):
-
-        games[key].lynch_vote_logic(player_id)
-
-        if games[key].game_state != 4:
-            message_players(key)
-
-            if games[key].game_state == 2:
-                play_game(key)
-
 
 
 bot.polling()
