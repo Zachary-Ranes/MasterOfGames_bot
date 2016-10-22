@@ -537,7 +537,7 @@ class Mafia(Game):
 
         if victim_kill:
             self.message_for_group[0] = ("During the night @" + self.players_id_to_username[id_of_victim] + " was killed by the mafia\n\nIt is now the day, who should be lynched?"
-            							+"\nIf half or more of the players are voting for someone they will be lyched")       
+            							+"\nIf half or more of the players are voting for someone they will be lynched")       
             
             self.ids_of_players.remove(id_of_victim)
             self.ids_of_innocents.remove(id_of_victim)
@@ -550,7 +550,7 @@ class Mafia(Game):
 
         markup_day = types.InlineKeyboardMarkup()
         for player_id in self.ids_of_players:
-            markup_day.row(types.InlineKeyboardButton(callback_data="lych"+ str(player_id), text="@"+self.players_id_to_username[player_id]))
+            markup_day.row(types.InlineKeyboardButton(callback_data="lynch"+ str(player_id), text="@"+self.players_id_to_username[player_id]))
 
         self.message_for_group[1] = markup_day
 
@@ -558,14 +558,39 @@ class Mafia(Game):
 
 
     # 
-    def lych_logic(self, player_id, id_of_player_to_be_lyched):
-    	self.ids_of_lych_targets[player_id] = id_of_player_to_be_lyched
-    	
+    def lych_logic(self, voter_id, id_of_player_to_be_lyched):
 
-    	return
+        self.ids_of_lych_targets[voter_id] = id_of_player_to_be_lyched
+        
+        vote_count = sum(1 for lych_id in self.ids_of_lych_targets.values() if lych_id==id_of_player_to_be_lyched)
+
+        markup_lych = types.InlineKeyboardMarkup()
+        for player_id in self.ids_of_players:
+            markup_lych.row(types.InlineKeyboardButton(callback_data="lynch"+ str(player_id), text="@"+self.players_id_to_username[player_id]+ " " + vote_count))
+
+        self.message_for_group[1] = markup_day
+
+        if vote_count >= (self.number_of_players/2):
+            self.ids_of_players.remove(id_of_player_to_be_lyched)
+            self.number_of_players -= 1
+
+            if id_of_player_to_be_lyched in self.ids_of_innocents:
+                self.ids_of_innocents.remove(id_of_player_to_be_lyched)
+            else:
+                self.ids_of_mafiosi.remove(id_of_player_to_be_lyched)
+
+
+            return id_of_player_to_be_lyched
+        else:
+            return False
 
 
     #
     def check_for_winner(self):
-        pass
+        if len(self.ids_of_innocents) == 0:
+            self.message_for_group[0] = "The last innocent has been killed the Mafia Win!!!"
+            self.game_state = -2
+        if len(self.ids_of_mafiosi) == 0:
+            self.message_for_group[0] = "The last mafiosi has been killed the Towns people Win!!!"
+            self.game_state = -2
 

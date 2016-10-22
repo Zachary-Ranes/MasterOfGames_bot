@@ -343,10 +343,10 @@ def game2_callback_look(call):
 
 
 #
-@bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data[0:4] == "lych")
+@bot.callback_query_handler(lambda call: call.message.chat.id in games and call.data[0:5] == "lynch")
 def game2_callback_lych(call):
     key = call.message.chat.id
-    lych_target_id = call.data[4:0]
+    lych_target_id = call.data[5:0]
     player_id = call.from_user.id
 
     if (games[key].game_state == 3
@@ -363,7 +363,7 @@ def game2_callback_lych(call):
             pass
 
         if id_of_lych_target:
-            bot.send_message(key, "@"+ games[key].players_id_to_username[id_of_lych_target] +" has been lyched, this dark day is done.")
+            bot.send_message(key, "@"+ games[key].players_id_to_username[id_of_lych_target] +" has been lynched, this dark day is done.")
             play_game(key)
     
 
