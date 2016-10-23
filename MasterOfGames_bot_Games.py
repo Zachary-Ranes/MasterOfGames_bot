@@ -1,48 +1,51 @@
 #Author: Zachary Ranes
 #Written in Python 2.7, requires eternnoir/pyTelegramBotAPI to run
 
-import telebot
-from telebot import types
 import math
 from random import shuffle
 
+import telebot
+from telebot import types
 
+#The base class that all the game types inherit from 
 class Game(object):
     
-    #
+    #Constructor for class 
     def __init__(self, game_code = None, min_players = None, max_players = None):
-        #
+        #Each game has its own code 
+        #Resistance: 1
+        #Mafia: 2
         self.game_code = game_code
         
-        #
         self.MIN_PLAYERS = min_players
         self.MAX_PLAYERS = max_players
         
-        #
+        #The game state is check to see what functions can be run
         self.game_state = 0
         self.game_state_before_pause = None
         
-        #
         self.ids_of_players = []
         self.number_of_players = 0
-        
-        #
+    
         self.players_id_to_username = {}
         self.players_username_to_id = {}
         
-        #
-        self.message_for_group = []
+        #This markup is used by all games to have players join the game
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
+                   types.InlineKeyboardButton(callback_data="start", text="Start Game"))
+        #The string part is black because it is assigned in the children classes 
+        self.message_for_group = ["", markup]
+        #format {key:["", markup], key:["", markup]}
         self.message_for_players = {}
         self.last_messages = {}
-    
         
-    #takes a telegram users chat ID,  username and first name
-    #returns a message if success or there can be no more players or returns None if a message should not be sent
+    #Returns a message saying the user has been added to the game or an error message
     def add_player(self, player_id, player_username, player_name):
         if player_username == None:
             return "I am sorry "+ player_name +" but you must have an @UserName to play"
         
-        if len(self.ids_of_players) == self.MAX_PLAYERS:
+        if len(self.ids_of_players) >= self.MAX_PLAYERS:
             return "I am sorry @"+ player_username +" but we already have the max number of player for this game"
        
         else: 
@@ -51,33 +54,31 @@ class Game(object):
             self.players_username_to_id[player_username] = player_id
             return "@"+ player_username +" has joined the game"
     
-    
-    #
+    #If there are enough player changes game_state to 1 if there is not changes the group message
     def enough_players(self):
         self.number_of_players = len(self.ids_of_players)
         
         if self.number_of_players < self.MIN_PLAYERS:
-            self.message_for_group[0] = ("Not enough players have joined to start the game \nYou need "+str(self.MIN_PLAYERS)
-                      +" to "+str(self.MAX_PLAYERS)+" people to play, "+str(self.number_of_players) +" players have joined")
+            self.message_for_group[0] = ("Not enough players have joined to start the game.\n"\
+                                         "You need "+str(self.MIN_PLAYERS)+" to "\
+                                         +str(self.MAX_PLAYERS)+" people to play, "\
+                                         +str(self.number_of_players) +" players have joined")
         else:
             self.game_state = 1
         
-        
-    #
+    #Function is different for each game but needed in all games
     def setup_game(self):
         pass
-        
-        
-    #
+          
+    #Function is different for each game but needed in all games
     def setup_round(self):
         pass
-              
 
-    #
+    #Function is different for each game but needed in all games
     def check_for_winner(self):
         pass
             
-    #
+    #If given true will pause game and store passed state if given false will restore passed state
     def pause_game(self, value):
         if value == True:
             self.game_state_before_pause = self.game_state
@@ -86,8 +87,7 @@ class Game(object):
             self.game_state = self.game_state_before_pause
             self.game_state_before_pause = None
             
-        
-    #
+    #Returns a string of usernames from the given list excluding any in the other list
     def list_usernames(self, list_of_excluded_id, list_of_player_ids):
         output = ""
         for player_id in list_of_player_ids:
@@ -96,17 +96,13 @@ class Game(object):
         return output
     
         
-        
+#        
 class Resistance(Game):
 
     def __init__(self, game_code = 1, min_players = 5, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
    
-        markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
-                   types.InlineKeyboardButton(callback_data="start", text="Start Game"))
-   
-        self.message_for_group = ["You have selected the game resistance\nTo play resistance we need 5 to 10 people", markup]
+        self.message_for_group[0] = "You have selected the game resistance\nTo play resistance we need 5 to 10 people"
    
         #This 2d array is the number of player in the game vs the number of player what will be needed for each round of the game 
         self.FIVE_PLAYERS = [2,3,2,3,3]
@@ -114,11 +110,11 @@ class Resistance(Game):
         self.SEVEN_PLAYERS = [2,3,3,4,4]
         self.EIGHT_PLUS_PLAYERS = [3,4,4,5,5]
         self.PLAYERS_PER_ROUND = [self.FIVE_PLAYERS, 
-                                    self.SIX_PLAYERS, 
-                                    self.SEVEN_PLAYERS, 
-                                    self.EIGHT_PLUS_PLAYERS, 
-                                    self.EIGHT_PLUS_PLAYERS, 
-                                    self.EIGHT_PLUS_PLAYERS]
+                                  self.SIX_PLAYERS, 
+                                  self.SEVEN_PLAYERS, 
+                                  self.EIGHT_PLUS_PLAYERS, 
+                                  self.EIGHT_PLUS_PLAYERS, 
+                                  self.EIGHT_PLUS_PLAYERS]
         
         """
         game_state is set to 0 in the parent class constructor
@@ -346,18 +342,15 @@ class Resistance(Game):
             self.game_state = 2
 
 
-
+#
 class Mafia(Game):
     
     #
     def __init__(self, game_code = 2, min_players = 7, max_players = 24):
         super(Mafia, self).__init__(game_code, min_players, max_players)
 
-        markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton(callback_data="join", text="Join"), 
-                   types.InlineKeyboardButton(callback_data="start", text="Start Game"))
-
-        self.message_for_group = ["You have selected the game mafia\nTo play mafia we need 7 to 21 people", markup]
+        #
+        self.message_for_group[0] = "You have selected the game mafia\nTo play mafia we need 7 to 21 people"
         
         """
         game_state is set to 0 in the parent class constructor
@@ -373,17 +366,19 @@ class Mafia(Game):
 
         self.ids_of_innocents = []
         self.ids_of_mafiosi = []
-        self.number_of_mafiosi = 0
-        self.role_completed_mafia = False
-        self.ids_of_mafia_targets = {}
-
         self.id_of_detective = None
-        self.role_completed_detective = False
-
         self.id_of_doctor = None
+        self.ids_of_alive_players = []
+        
+        self.number_of_mafiosi = 0
+
+        self.role_completed_mafia = False
+        self.role_completed_detective = False
         self.role_completed_doctor = False
+
         self.id_of_saved_player = None
 
+        self.ids_of_mafia_targets = {}
         self.ids_of_lych_targets = {}
 
 
