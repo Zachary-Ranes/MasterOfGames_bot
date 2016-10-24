@@ -186,7 +186,7 @@ def play_round(key):
         bot.send_message(key, games[key].message_for_group[0])
         del games[key] 
     else:
-        games[key].setup_round()
+        games[key].setup_round(key)
         message_players(key)
 
 #Sends private messages to all player there is a message for and to the group 
@@ -286,7 +286,7 @@ def game2_callback_kill(call):
     and player_id in games[key].ids_of_alive_players
     and not games[key].role_completed_mafia):
 
-        kill_vote_logic(player_id, target_player_id)        
+        kill_vote_logic(player_id, target_player_id, key)        
         for player_id in games[key].ids_of_mafiosi:
             if player_id in games[key].ids_of_alive_players:
                 try:
@@ -355,7 +355,7 @@ def game2_callback_lych(call):
     and target_player_id in games[key].ids_of_alive_players
     and player_id in games[key].ids_of_alive_players):
 
-        id_of_lych_target = games[key].lych_logic(player_id, target_player_id)
+        id_of_lych_target = games[key].lynch_logic(player_id, target_player_id)
         try:
             bot.edit_message_text(games[key].message_for_group[0],
                                   message_id=call.message.message_id,
