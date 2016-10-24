@@ -13,7 +13,7 @@ from MasterOfGames_bot_Games import Mafia
 
 #This loads a configure file that holds the bots API key
 config = ConfigParser.ConfigParser()
-config.read("MasterOfGames_bot_config.cfg")
+config.read("Config.cfg")
 
 #The bot object is the go between the telegram API and the python code
 bot = telebot.TeleBot(config.get("telegram_bot_api","telegram_token"))
@@ -21,7 +21,6 @@ bot = telebot.TeleBot(config.get("telegram_bot_api","telegram_token"))
 #This dictionary holds the game objects which are the instances of the game in different chats
 #key : the id of the chat the game object belongs to, no duplicate keys  
 games = {}
-
 
 #Start is run when a bot when the bot is added to a chat or first private messaged
 @bot.message_handler(commands=['start'])
@@ -35,7 +34,6 @@ def command_start(message):
      or message.chat.type == "supergroup" and message.chat.id not in games):
         bot.reply_to(message, "Hello!!! if you would like to play a game type /new_game")
 
-
 #A command that is expected in most bots, will show a list of commands to get game rules
 @bot.message_handler(commands=['help'])
 def command_help(message):
@@ -44,20 +42,17 @@ def command_help(message):
                           "to play a game the flowing rule books are available (run theses in a "\
                           "private chat because they are long) /rules_resistance /rules_mafia")
 
-
 #Output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_resistance'])
 def command_rules_resistance(message):
     with open("Rules_resistance.txt", "rb") as rules_resistance:
         bot.reply_to(message, rules_resistance.read())
 
-
 #Output text with detailed rules on how to play resistance
 @bot.message_handler(commands=['rules_mafia'])
 def command_rules_mafia(message):
     with open("Rules_mafia.txt", "rb") as rules_mafia:
         bot.reply_to(message, rules_mafia.read())
-
 
 #Provides the ability for players to end a game before it is played fully 
 @bot.message_handler(commands=['end_game'])
@@ -73,7 +68,6 @@ def command_end_game(message):
         bot.reply_to(message, "Are you sure you want to end the game?!", reply_markup=markup) 
     else:
         bot.reply_to(message, "There's a time and place for everything, but not now")
-
 
 #Handles the callback from the end_game command 
 @bot.callback_query_handler(func=lambda call: call.message.chat.id in games 
@@ -97,7 +91,6 @@ def callback_from_end_game(call):
     else:
         pass
 
-
 #Responds to players request for a new game and shows what games can be played
 @bot.message_handler(commands=['new_game'])
 def command_new_game(message):
@@ -114,7 +107,6 @@ def command_new_game(message):
         bot.send_message(key, "Which game would you like to play?", reply_markup=markup)
     else:
         bot.reply_to(message, "There's a time and place for everything, but not now")
-
 
 #Handles the callback from new_game and adds an instance of the proper game to the games dictionary  
 @bot.callback_query_handler(func=lambda call: call.message.chat.id not in games 
@@ -133,8 +125,7 @@ def callback_from_new_game(call):
                           message_id=call.message.message_id, 
                           chat_id=key, 
                           reply_markup=games[key].message_for_group[1])
-                          
-    
+                              
 #Handles join callback adding player to the active game or shows why the player can not be added
 @bot.callback_query_handler(lambda call: call.message.chat.id in games 
                                          and call.data == "join")
@@ -150,7 +141,6 @@ def callback_join(call):
                                                           call.from_user.first_name)
         bot.send_message(key, add_player_output_message)
                 
-
 #Handles start callback, check to see if the game can start and if it can starts the game
 @bot.callback_query_handler(lambda call: call.message.chat.id in games 
                                          and call.data == "start")
@@ -189,7 +179,6 @@ def callback_start(call):
                 message_players(key)
                 play_round(key)
                 
-
 #Called when a new round in ether game starts
 def play_round(key):
     games[key].check_for_winner()
@@ -200,7 +189,6 @@ def play_round(key):
         games[key].setup_round()
         message_players(key)
 
-   
 #Sends private messages to all player there is a message for and to the group 
 #Will delete the game object if the bot can no long talk to a player
 def message_players(key):
@@ -219,8 +207,7 @@ def message_players(key):
             bot.send_message(key, "Someone has blocked me mid way through the game, "\
                                   "I am sorry the game can not continue GAME ENDED")
             del games[key]
-       
-    
+           
 #Handles the nominate command used in the resistance game
 @bot.message_handler(commands=['nominate'])
 def game1_command_nominate(message):
@@ -237,7 +224,6 @@ def game1_command_nominate(message):
                          reply_markup=games[key].message_for_group[1])
         else:
             bot.reply_to(message, "There's a time and place for everything, but not now")
-
 
 #Handles the callback which is a vote on the nominee  
 @bot.callback_query_handler(lambda call: call.message.chat.id in games 
@@ -262,8 +248,7 @@ def game1_callback_yea_or_nay(call):
         if games[key].game_state == 4:
             games[key].setup_mission(key)
             message_players(key)
-                
-            
+                            
 #takes the pass fail callbacks from private chats
 #informs user of mission result and then starts new round or ends game                   
 @bot.callback_query_handler(lambda call: call.data[0:4] == "pass" 
@@ -285,7 +270,6 @@ def game1_callback_pass_or_fail(call):
             bot.send_message(key, games[key].message_for_group[0])
             play_round(key)
    
-
 #The callback handler for a mafia player targeting a player to kill
 @bot.callback_query_handler(lambda call: call.data[0:4] == "kill" 
                                          and int(call.data[6:] in games))
@@ -293,7 +277,7 @@ def game2_callback_kill(call):
     key = int(call.data[6:])
     player_id = call.from_user.id
     target_player_id_index = int(call.data[4:6])
-    target_player_id = games[key].ids_of_players[target_player_id_index]
+    target_player_id = games[key].ids_of_innocents[target_player_id_index]
 
     if (games[key].game_code == 2
     and games[key].game_state == 2
@@ -316,7 +300,6 @@ def game2_callback_kill(call):
     if games[key].night_over():
         player_game(key)
 
-
 #The callback handler for the doctor choosing who to heal 
 @bot.callback_query_handler(lambda call: call.data[0:4] == "heal" 
                                          and int(call.data[6:] in games))
@@ -337,7 +320,6 @@ def game2_callback_heal(call):
 
     if games[key].night_over():
         player_game(key)
-
 
 #The callback handler for the detective checking a player role 
 @bot.callback_query_handler(lambda call: call.data[0:4] == "look" 
@@ -360,8 +342,7 @@ def game2_callback_look(call):
     if games[key].night_over():
         player_game(key)
 
-
-#
+#The callback handler for the group voting on who to lynch
 @bot.callback_query_handler(lambda call: call.message.chat.id in games 
                                          and call.data[0:5] == "lynch")
 def game2_callback_lych(call):
@@ -388,6 +369,5 @@ def game2_callback_lych(call):
                                      +" has been lynched, this dark day is done.")
             play_round(key)
     
-
 
 bot.polling()

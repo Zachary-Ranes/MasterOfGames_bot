@@ -6,7 +6,6 @@ The bot can GM for the following games:
 - Resistance (Done)
 - Mafia (WIP)
 
-Written in python 2.7  
-
-# Dependencies
-eternnoir/pyTelegramBotAPI
+# Requires to run:    
+Python 2.7   
+[pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI)   
