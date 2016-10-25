@@ -142,11 +142,12 @@ def callback_join(call):
 def callback_start(call):
     key = call.message.chat.id
 
+    talked_to_everyone = False
     if games[key].can_start_game(call.from_user.id):
         talked_to_everyone = True
         for player_id in games[key].ids_of_players:
             try:
-                bot.send_message(player_id, "Checking if I can talk to you")
+                bot.send_message(player_id, "Setting things up")
             except:
                 bot.send_message(key, "I can not talk to @"
                                      + games[key].players_id_to_username[player_id]
@@ -154,19 +155,19 @@ def callback_start(call):
                                       "we can not play the game if you do not do so")
                 games[key].can_start_game("false_start")
                 talked_to_everyone = False
-        if talked_to_everyone:
-            games[key].setup_game(key)
-            message_players(key)
-            play_round(key)
-    else:
-        try:
-            bot.edit_message_text(games[key].message_for_group[0], 
-                                  message_id=call.message.message_id, 
-                                  chat_id=key, 
-                                  reply_markup=games[key].message_for_group[1]) 
-        #The API will throw an error if you try to edit a message and the edit is not different
-        #That is why this except does nothing just prevents the bot from crashing       
-        except: pass
+    try:
+        bot.edit_message_text(games[key].message_for_group[0], 
+                              message_id=call.message.message_id, 
+                              chat_id=key, 
+                              reply_markup=games[key].message_for_group[1]) 
+    #The API will throw an error if you try to edit a message and the edit is not different
+    #That is why this except does nothing just prevents the bot from crashing       
+    except: pass
+
+    if talked_to_everyone:
+        games[key].setup_game(key)
+        message_players(key)
+        play_round(key)
                
 #Called when a new round in ether game starts
 def play_round(key):
@@ -202,7 +203,7 @@ def resistance_command_nominate(message):
     key = message.chat.id
     if key in games:
         if games[key].game_type("resistance"):  
-            if games[key].nominate_logic(message.from_user, message.entities, message.text):
+            if games[key].nominate_logic(message.from_user.id, message.entities, message.text):
                 bot.reply_to(message, 
                              games[key].message_for_group[0], 
                              reply_markup=games[key].message_for_group[1])

@@ -74,6 +74,8 @@ class Game(object):
                                          +str(self.number_of_players) +" players have joined")
             return False
         else:
+            self.message_for_group[0] = "Game has started."
+            self.message_for_group[1] = None
             game_state = 1
             return True
 
@@ -110,7 +112,7 @@ class Game(object):
 class Resistance(Game):
 
     #Constructor for class 
-    def __init__(self, game_code = 1, min_players = 5, max_players = 10):
+    def __init__(self, game_code = 1, min_players = 3, max_players = 10):
         super(Resistance, self).__init__(game_code, min_players, max_players)
         
         """
@@ -240,7 +242,7 @@ class Resistance(Game):
     #Function parses who the entities in a telegram message to see who is nominate
     #Changes group message and markup depending on if the nomination is valid 
     #Returns true if it has a message 
-    def nominate_logic(self, entities, text):
+    def nominate_logic(self, player_id, entities, text):
         if self.game_state != 2 or player_id != self.id_of_nominator:
             return False 
         
@@ -283,7 +285,7 @@ class Resistance(Game):
         
         self.message_for_group[0] = "Now everyone vote on the proposed mission party\n"\
                                     "If half or more of the vote are nay the next player"\
-                                    " will get to nominate players o go on a mission"
+                                    " will get to nominate players to go on a mission"
         self.message_for_group[1] = markup
         self.game_state = 3
         return True
@@ -322,7 +324,7 @@ class Resistance(Game):
         self.mission_fail_votes = 0
         self.ids_of_players_voted_from_mission = []
 
-        self.message_for_group[0] = (self.list_usernames(None, self.ids_of_players_going_on_mission)
+        self.message_for_group[0] = (self.list_usernames([], self.ids_of_players_going_on_mission)
                                     +" are now going on a mission")
         self.message_for_group[1] = None
         
