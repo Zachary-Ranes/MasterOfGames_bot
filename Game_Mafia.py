@@ -108,8 +108,7 @@ class Mafia():
             return True
 
     #Method is called once after all players have joined 
-    def setup_game(self, key):
-        self.game_key = key
+    def setup_game(self):
         self.number_of_alive_mafiosi = int(round(self.number_of_players/3))
         self.number_of_alive_innocents = self.number_of_players \
                                         - self.number_of_alive_mafiosi
@@ -208,6 +207,9 @@ class Mafia():
             self.message_for_players[self.id_of_detective] = (
                 "Who do you want to check the role of?", 
                 markup_detective)
+        self.role_completed_mafia = False
+        self.role_completed_detective = False
+        self.role_completed_doctor = False
         self.ids_of_mafia_targets = {}
         self.id_of_dead_man = None
         self.game_state = 3
@@ -239,12 +241,13 @@ class Mafia():
                 if vote_count == self.number_of_alive_mafiosi:
                     self.role_completed_mafia = True
                     self.id_of_dead_man = player_id 
-        if role_completed_mafia:
+        output = {}
+        if self.role_completed_mafia:
             for player_id in self.ids_of_mafiosi:
                 if player_id in self.ids_of_alive_players:
                     output[player_id] = (
                         "The mafia will be visiting @"
-                        + self.players_id_to_username[id_of_dead_man]
+                        + self.players_id_to_username[self.id_of_dead_man]
                         +" tonight.",
                         None)
             return output
@@ -262,7 +265,7 @@ class Mafia():
         if self.game_state != 3 \
         or id_of_player_to_save not in self.ids_of_alive_players\
         or player_id not in self.ids_of_alive_players\
-        or player_id != id_of_doctor\
+        or player_id != self.id_of_doctor\
         or self.role_completed_doctor:
             return False
         self.role_completed_doctor = True
@@ -276,7 +279,7 @@ class Mafia():
         if self.game_state != 3 \
         or id_of_player_to_search not in self.ids_of_alive_players\
         or player_id not in self.ids_of_alive_players\
-        or player_id != id_of_detective\
+        or player_id != self.id_of_detective\
         or self.role_completed_detective:
             return False
         self.role_completed_detective = True
@@ -296,6 +299,10 @@ class Mafia():
 
     #
     def night_over(self):
+        if self.id_of_doctor not in self.ids_of_alive_players:
+            self.role_completed_doctor = True
+        if self.id_of_detective not in self.ids_of_alive_players:
+            self.role_completed_detective = True
         if (self.role_completed_mafia 
         and self.role_completed_detective
         and self.role_completed_doctor):
@@ -375,12 +382,12 @@ class Mafia():
 
     #
     def day_over(self):
-        if game_state != 6:
+        if self.game_state != 6:
             return False
         else:
             self.message_for_players = {}
             self.message_for_group = (
-                "The dark day is over, there are now" 
+                "The dark day is over, there are now " 
                 + str(self.number_of_alive_mafiosi
                     +self.number_of_alive_innocents) 
                 + " people left."
