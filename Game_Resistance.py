@@ -14,7 +14,6 @@ class Resistance():
         self.game_key = key
         self.game_state = 0
         """
-        game_state is set to 0 in the parent class construct
         game_state = 0 : game has not start (players can still join)
         game_state = 1 : the game has started (players cant hit join)
         game_state = 2 : looking for nominees for a mission

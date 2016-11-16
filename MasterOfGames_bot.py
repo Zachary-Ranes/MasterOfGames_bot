@@ -209,7 +209,7 @@ def resistance_callbacks_from_nomination(call):
 
 #takes the pass fail callbacks from private chats
 #informs user of mission result and then starts new round or ends game                   
-@bot.callback_query_handler(lambda call: call.data[0:16] == "MoG_mission_pass" 
+@bot.callback_query_handler(lambda call: call.data[0:16]== "MoG_mission_pass" 
                                          and int(call.data[16:]) in games 
                                          or call.data[0:16]== "MoG_mission_fail" 
                                          and int(call.data[16:]) in games)
