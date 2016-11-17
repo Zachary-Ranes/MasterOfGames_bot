@@ -7,7 +7,6 @@ import telebot
 from telebot import types
 
 class Mafia():
-    #Constructor for class 
     def __init__(self, key):
         self.game_name = "mafia"
         self.game_key = key
@@ -51,7 +50,7 @@ class Mafia():
         self.ids_of_mafia_targets = {}
         self.ids_of_lych_targets = {}
 
-    #
+    #tool function 
     def list_usernames(self, excluded_ids, list_of_player_ids):
         output = ""
         for player_id in list_of_player_ids:
@@ -67,7 +66,7 @@ class Mafia():
         return ("You have selected the game mafia.\n"\
                 "To play resistance we need 7 to 24 players.",
                 markup)
-    #
+    #returns false if player can't be added, returns edited group message else
     def add_player(self, player_id, player_username, player_name):
         if (self.game_state != 0 
         or player_id in self.ids_of_players
@@ -94,7 +93,7 @@ class Mafia():
                                                   text="Start"))
         return (message_text+extra_message, markup)
 
-    #
+    #returns true if game has enough players and changes game state
     def can_game_start(self, player_id):
         if self.game_state != 0:
             return False
@@ -214,7 +213,7 @@ class Mafia():
         self.id_of_dead_man = None
         self.game_state = 3
 
-    #
+    #handles kill votes from mafia member during night rounds
     def mafia_logic(self, mafia_id, id_of_player_voted_to_be_killed):
         if self.game_state != 3 \
         or id_of_player_voted_to_be_killed not in self.ids_of_alive_players\
@@ -260,7 +259,6 @@ class Mafia():
                         markup_mafia)
             return output
 
-    #
     def doctor_logic(self, player_id, id_of_player_to_save):
         if self.game_state != 3 \
         or id_of_player_to_save not in self.ids_of_alive_players\
@@ -274,7 +272,6 @@ class Mafia():
                +" will be saved saved if the mafia attack them tonight.",
                 None)
 
-    #
     def detective_logic(self, player_id, id_of_player_to_search):
         if self.game_state != 3 \
         or id_of_player_to_search not in self.ids_of_alive_players\
@@ -297,7 +294,6 @@ class Mafia():
                    +" is part of the mafia.",
                     None)
 
-    #
     def night_over(self):
         if self.id_of_doctor not in self.ids_of_alive_players:
             self.role_completed_doctor = True
@@ -328,7 +324,6 @@ class Mafia():
         else:
             return False
 
-    #
     def setup_day(self):        
         markup_day = types.InlineKeyboardMarkup()
         for player_id in self.ids_of_players:
@@ -344,7 +339,6 @@ class Mafia():
         self.ids_of_lych_targets = {}
         self.game_state = 5
 
-    #
     def lynch_logic(self, voter_id, id_of_player_to_be_lyched):
         if self.game_state != 5\
         or id_of_player_to_be_lyched not in self.ids_of_alive_players\
@@ -380,7 +374,6 @@ class Mafia():
                 "votes to lynch them**",
                 markup_lynch)
 
-    #
     def day_over(self):
         if self.game_state != 6:
             return False
@@ -395,7 +388,6 @@ class Mafia():
             self.game_state = 2
             return True
 
-    #
     def end_state(self):
         if self.number_of_alive_innocents == 0:
             return "And with that all the innocent are dead\nthe Mafia Win!!!"

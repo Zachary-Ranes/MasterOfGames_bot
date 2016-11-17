@@ -6,20 +6,18 @@ from random import shuffle
 import telebot
 from telebot import types
 
-#
 class Resistance():
-    #Constructor for class 
     def __init__(self, key):
         self.game_name = "resistance"
         self.game_key = key
         self.game_state = 0
         """
-        game_state = 0 : game has not start (players can still join)
-        game_state = 1 : the game has started (players cant hit join)
-        game_state = 2 : looking for nominees for a mission
-        game_state = 3 : looking for votes on nominees for mission
-        game_state = 4 : voting over, players going on mission
-        game_state = 5 : mission over next round is being set up or game is over
+        game_state 0: game has not start (players can still join)
+        game_state 1: the game has started (players cant hit join)
+        game_state 2: looking for nominees for a mission
+        game_state 3: looking for votes on nominees for mission
+        game_state 4: voting over, players going on mission
+        game_state 5: mission over next round is being set up or game over
         """
         self.MIN_PLAYERS = 5
         self.MAX_PLAYERS = 10
@@ -69,7 +67,7 @@ class Resistance():
         self.points_spies = 0
         self.points_resistance = 0
     
-    #
+    #tool function 
     def list_usernames(self, excluded_id, list_of_player_ids):
         output = ""
         for player_id in list_of_player_ids:
@@ -86,7 +84,7 @@ class Resistance():
                 "To play resistance we need 5 to 10 players.",
                 markup)
 
-    #
+    #returns false if player can't be added, returns edited group message else
     def add_player(self, player_id, player_username, player_name):
         if (self.game_state != 0 
         or player_id in self.ids_of_players
@@ -113,7 +111,7 @@ class Resistance():
                                                   text="Start"))
         return (message_text+extra_message, markup)
 
-    #
+    #returns true if game has enough players and changes game state
     def can_game_start(self, player_id):
         if self.game_state != 0:
             return False
@@ -175,7 +173,7 @@ class Resistance():
         self.message_for_players = {}
         self.game_state = 2
 
-    #
+    #logic behind the nominate command
     def nominate_logic(self, player_id, entities, text):
         if self.game_state != 2: 
             return ("It is not the time to run that command",None) 
@@ -241,7 +239,7 @@ class Resistance():
                                         "someone now.",None)
         return "\n@"+self.players_id_to_username[player_id] +" has voted "+ vote
    
-    #
+    #reset variables to a state they should be in before a mission
     def setup_mission(self):
         self.mission_pass_votes = 0
         self.mission_fail_votes = 0
@@ -276,7 +274,7 @@ class Resistance():
                         self.ids_of_players_going_on_mission), 
                     markup_spies)
 
-    #
+    #takes votes and changes game state if all votes have been cast
     def mission_logic(self, player_id, vote):
         if (self.game_state != 4 
         or player_id not in self.ids_of_players_going_on_mission 
@@ -306,7 +304,7 @@ class Resistance():
             self.game_state = 5
         return self.message_for_players[player_id][0] +"\nYou voted: " + vote
 
-    #
+    #returns a message if one of the teams has won else returners false
     def end_state(self):
         if self.points_resistance >= 3:
             return "The resistance has scored 3 points!!!\nThe resistance has "\

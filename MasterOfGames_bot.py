@@ -102,7 +102,7 @@ def callback_join(call):
               
 #Handles start callback, check to see if the game can start 
 @bot.callback_query_handler(lambda call: call.message.chat.id in games 
-                                         and call.data == "Mog_start")
+                                         and call.data == "MoG_start")
 def callback_start(call):
     key = call.message.chat.id
     if games[key].can_game_start(call.from_user.id):
@@ -158,7 +158,7 @@ def message_all(key):
                                   "continue GAME TERMMINADED")
             del games[key]
 
-#
+#Each round start with message from setup game or from the end of the last round
 def new_round():
     message_all(key)
     game_over = games[key].end_state()
@@ -183,7 +183,7 @@ def resistance_command_nominate(message):
 #Handles the callback which is a vote on the nomination  
 @bot.callback_query_handler(lambda call: call.message.chat.id in games 
                                          and call.data == "MoG_nominate_nay" 
-                                         or call.message.chat.id in games 
+                                      or call.message.chat.id in games 
                                          and call.data == "MoG_nominate_yea")
 def resistance_callbacks_from_nomination(call):
     key = call.message.chat.id
@@ -207,11 +207,10 @@ def resistance_callbacks_from_nomination(call):
                 games[key].setup_round()
                 message_all(key)
 
-#takes the pass fail callbacks from private chats
-#informs user of mission result and then starts new round or ends game                   
+#takes the pass fail callbacks from private chats                  
 @bot.callback_query_handler(lambda call: call.data[0:16]== "MoG_mission_pass" 
                                          and int(call.data[16:]) in games 
-                                         or call.data[0:16]== "MoG_mission_fail" 
+                                      or call.data[0:16]== "MoG_mission_fail" 
                                          and int(call.data[16:]) in games)
 def resistance_callbacks_from_mission(call):
     key = int(call.data[16:])
